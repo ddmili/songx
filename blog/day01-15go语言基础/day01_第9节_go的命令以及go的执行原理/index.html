@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.97.3" /><meta name="theme-color" content="#fff" />
+    <meta name="color-scheme" content="light dark">
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>Go的执行原理以及Go的命令 | 踏步而行</title>
+
+    <link rel="stylesheet" href="/css/meme.min.a1ab2391e97738d70fe91d80a0f8a479a36b7e06dfd1fcf07454b4a451b89ccb.css"/>
+
+    
+    
+        <script src="/js/meme.min.d001b05c04cce10a61f2d919c43f9f563889ea176cb110b472e7e417f41abd77.js"></script>
+
+<script src="/js/prism.js"></script>
+
+    
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="songx" /><meta name="description" content="命令源码文件被安装以后，GOPATH 如果只有一个工作区，那么相应的可执行文件会被存放当前工作区的 bin 文件夹下；如果有多个工作区，就会安装到 GOBIN 指向的目录下。" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="踏步而行" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="踏步而行" />
+    <meta name="msapplication-starturl" content="../../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+      
+  <link rel="stylesheet" href="/css/prism.css" />
+
+
+    
+    <link rel="canonical" href="http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2022-08-01T21:29:20+02:00",
+        "dateModified": "2022-08-04T11:19:59+08:00",
+        "url": "http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/",
+        "headline": "Go的执行原理以及Go的命令",
+        "description": "命令源码文件被安装以后，GOPATH 如果只有一个工作区，那么相应的可执行文件会被存放当前工作区的 bin 文件夹下；如果有多个工作区，就会安装到 GOBIN 指向的目录下。",
+        "inLanguage" : "zh-CN",
+        "articleSection": "blog",
+        "wordCount":  7217 ,
+        "image": ["http://www.songx.fun/img/png/yuanmawenjian1.png","http://www.songx.fun/img/png/gomingling1.png","http://www.songx.fun/img/png/gomingling2.png","http://www.songx.fun/img/png/gomingling3.png","http://www.songx.fun/img/png/gomingling4.gif","http://www.songx.fun/img/png/gomingling5.jpg","http://www.songx.fun/img/png/gomingling6.png","http://www.songx.fun/img/png/gomingling7.png","http://www.songx.fun/img/png/gomingling8.png","http://www.songx.fun/img/png/gomingling9.png","http://www.songx.fun/img/png/gomingling10.jpg","http://www.songx.fun/img/png/zhixingyuanli.png","http://www.songx.fun/img/png/gomingling11.jpg","http://www.songx.fun/img/png/gomingling12.png","http://www.songx.fun/img/png/gomingling13.png","http://www.songx.fun/img/png/gomingling14.jpg"],
+        "author": {
+            "@type": "Person",
+            "description": "Those failed to defeat you,will eventually make you stronger.",
+            "email": "245935836@163.com",
+            "image": "http://www.songx.fun/icons/apple-touch-icon.png",
+            "url": "https://songx.fun/",
+            "name": "songx"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "踏步而行",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "http://www.songx.fun/icons/apple-touch-icon.png"
+            },
+            "url": "http://www.songx.fun/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "http://www.songx.fun/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+<meta name="twitter:site" content="@reuixiy" />
+<meta name="twitter:creator" content="@songx" />
+
+    
+
+
+
+<meta property="og:title" content="Go的执行原理以及Go的命令" />
+<meta property="og:description" content="命令源码文件被安装以后，GOPATH 如果只有一个工作区，那么相应的可执行文件会被存放当前工作区的 bin 文件夹下；如果有多个工作区，就会安装到 GOBIN 指向的目录下。" />
+<meta property="og:url" content="http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/" />
+<meta property="og:site_name" content="踏步而行" />
+<meta property="og:locale" content="zh" /><meta property="og:image" content="http://www.songx.fun/img/png/yuanmawenjian1.png" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2022-08-01T21:29:20&#43;02:00" />
+    <meta property="article:modified_time" content="2022-08-04T11:19:59&#43;08:00" />
+    
+    <meta property="article:section" content="blog" />
+
+
+
+    
+    
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">踏步而行</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon home"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg><span class="menu-item-name">首页</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">分类</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">标签</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/about/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">关于</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+            
+        
+            
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-align="justify" data-type="blog" data-toc-num="true">
+
+            <h1 class="post-title p-name">Go的执行原理以及Go的命令</h1>
+
+            
+
+            
+                <div class="post-description p-summary">命令源码文件被安装以后，GOPATH 如果只有一个工作区，那么相应的可执行文件会被存放当前工作区的 bin 文件夹下；如果有多个工作区，就会安装到 GOBIN 指向的目录下。</div>
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2022-08-01T21:29:20&#43;02:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2022.8.1</time>
+    
+    
+        
+        <time datetime="2022-08-04T11:19:59&#43;08:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2022.8.4</time>
+    
+    
+    
+        
+        
+        
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/categories/golang/" class="category-link p-category">golang</a>/<a href="/categories/%E7%AE%80%E5%8F%B2/" class="category-link p-category">简史</a>/<a href="/categories/%E7%BC%96%E7%A8%8B/" class="category-link p-category">编程</a>/<a href="/categories/%E5%9F%BA%E7%A1%80/" class="category-link p-category">基础</a></span>
+            
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;7217</span>
+    
+    
+        
+        <span class="post-meta-item reading-time"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;15&nbsp;分钟</span>
+    
+    
+    
+</div>
+
+            
+
+            <nav class="contents" style="position: fixed;top:2%;right:2%;width:350px;
+height:90%;
+overflow: scroll;
+">
+  <ol class="toc">
+    <li><a id="contents:一go的源码文件" href="#一go的源码文件">一、Go的源码文件</a></li>
+    <li><a id="contents:二go的命令" href="#二go的命令">二、Go的命令</a>
+      <ol>
+        <li><a id="contents:1-go-run" href="#1-go-run">1. go run</a></li>
+        <li><a id="contents:2-go-build" href="#2-go-build">2. go build</a></li>
+        <li><a id="contents:3-go-install" href="#3-go-install">3. go install</a></li>
+        <li><a id="contents:4-go-get" href="#4-go-get">4. go get</a></li>
+        <li><a id="contents:5-其他命令" href="#5-其他命令">5. 其他命令</a></li>
+      </ol>
+    </li>
+  </ol>
+</nav><div class="post-body e-content">
+                <h1 id="go的执行原理以及go的命令"><a href="#go的执行原理以及go的命令" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:go的执行原理以及go的命令" class="headings">Go的执行原理以及Go的命令</a></h1>
+<blockquote>
+<p>@author：韩茹
+版权所有：北京千锋互联科技有限公司</p>
+</blockquote>
+<h2 id="一go的源码文件"><a href="#一go的源码文件" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:一go的源码文件" class="headings">一、Go的源码文件</a></h2>
+<p>Go 的源码文件分类：</p>
+<p><img src="/img/png/yuanmawenjian1.png" alt="yuanmawenjian1"></p>
+<p>如上图，分为三类：</p>
+<p><strong>1、命令源码文件：</strong></p>
+<p>声明自己属于 main 代码包、包含无参数声明和结果声明的 main 函数。</p>
+<p>命令源码文件被安装以后，GOPATH 如果只有一个工作区，那么相应的可执行文件会被存放当前工作区的 bin 文件夹下；如果有多个工作区，就会安装到 GOBIN 指向的目录下。</p>
+<p>命令源码文件是 Go 程序的入口。</p>
+<p>同一个代码包中最好也不要放多个命令源码文件。多个命令源码文件虽然可以分开单独 go run 运行起来，但是无法通过 go build 和 go install。</p>
+<p>我们先打开上次课的hello目录，然后复制helloworld.go为helloworld2.go文件，并修改里面的内容：</p>
+<pre><code class="language-go">package main
+import &quot;fmt&quot;
+func main(){
+	fmt.Println(&quot;我是第二个helloworld文件&quot;)
+	fmt.Print(&quot;Go Go Go !!!&quot;)
+}
+</code></pre>
+<p>hello目录下有两个go文件了，一个是helloworld.go，一个是helloworld2.go。先说明一下，在上述文件夹中放了两个命令源码文件，同时都声明自己属于 main 代码包。</p>
+<p><img src="/img/png/gomingling1.png" alt="gomingling1"></p>
+<p>打开终端，进入hello这个目录，也可以看到这两个文件：</p>
+<pre><code class="language-shell">localhost:~ ruby cd go/src/hello
+localhost:hello ruby ls
+helloworld.go	helloworld2.go
+</code></pre>
+<p>然后我们分别执行go run命令，可以看到两个go文件都可以被执行：</p>
+<pre><code class="language-shell">localhost:hello ruby$ go run helloworld.go
+HelloWorld
+Go Go Go !!!localhost:hello ruby$ go run helloworld2.go
+我是第二个helloworld文件
+Go Go Go !!!
+</code></pre>
+<p><img src="/img/png/gomingling2.png" alt="gomingling2"></p>
+<p>接下来执行 go build 和 go install ，看看会发生什么：</p>
+<pre><code class="language-shell">localhost:hello ruby$ go build 
+# hello
+./helloworld2.go:3:6: main redeclared in this block
+	previous declaration at ./helloworld.go:3:6
+localhost:hello ruby$ go install
+# hello
+./helloworld2.go:3:6: main redeclared in this block
+	previous declaration at ./helloworld.go:3:6
+localhost:hello ruby$ 
+</code></pre>
+<p>运行效果图：</p>
+<p><img src="/img/png/gomingling3.png" alt="gomingling3"></p>
+<p>这也就证明了多个命令源码文件虽然可以分开单独 go run 运行起来，但是无法通过 go build 和 go install。</p>
+<p>同理，如果命令源码文件和库源码文件也会出现这样的问题，库源码文件不能通过 go build 和 go install 这种常规的方法编译和安装。具体例子和上述类似，这里就不再贴代码了。</p>
+<p>所以命令源码文件应该是被单独放在一个代码包中。</p>
+<p><strong>2、库源码文件</strong></p>
+<p>库源码文件就是不具备命令源码文件上述两个特征的源码文件。存在于某个代码包中的普通的源码文件。</p>
+<p>库源码文件被安装后，相应的归档文件（.a 文件）会被存放到当前工作区的 pkg 的平台相关目录下。</p>
+<p><strong>3、测试源码文件</strong></p>
+<p>名称以 _test.go 为后缀的代码文件，并且必须包含 Test 或者 Benchmark 名称前缀的函数：</p>
+<pre><code class="language-go">func TestXXX( t *testing.T) {
+
+}
+</code></pre>
+<p>名称以 Test 为名称前缀的函数，只能接受 *testing.T 的参数，这种测试函数是功能测试函数。</p>
+<pre><code class="language-go">func BenchmarkXXX( b *testing.B) {
+
+}
+
+</code></pre>
+<p>名称以 Benchmark 为名称前缀的函数，只能接受 *testing.B 的参数，这种测试函数是性能测试函数。</p>
+<p>现在答案就很明显了：</p>
+<p>命令源码文件是可以单独运行的。可以使用 go run 命令直接运行，也可以通过 go build 或 go install 命令得到相应的可执行文件。所以命令源码文件是可以在机器的任何目录下运行的。</p>
+<p>举个栗子：</p>
+<p>比如平时我们在 LeetCode 上刷算法题，这时候写的就是一个程序，这就是命令源码文件，可以在电脑的任意一个文件夹新建一个 go 文件就可以开始刷题了，写完就可以运行，对比执行结果，答案对了就可以提交代码。</p>
+<p>但是公司项目里面的代码就不能这样了，只能存放在 GOPATH 目录下。因为公司项目不可能只有命令源码文件的，肯定是包含库源码文件，甚至包含测试源码文件的。</p>
+<h2 id="二go的命令"><a href="#二go的命令" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:二go的命令" class="headings">二、Go的命令</a></h2>
+<p>目前Go的最新版1.12里面基本命令有以下17个。</p>
+<p>我们可以打开终端输入：go help即可看到Go的这些命令以及简介。</p>
+<pre><code class="language-shell">	bug         start a bug report
+	build       compile packages and dependencies
+	clean       remove object files and cached files
+	doc         show documentation for package or symbol
+	env         print Go environment information
+	fix         update packages to use new APIs
+	fmt         gofmt (reformat) package sources
+	generate    generate Go files by processing source
+	get         download and install packages and dependencies
+	install     compile and install packages and dependencies
+	list        list packages or modules
+	mod         module maintenance
+	run         compile and run Go program
+	test        test packages
+	tool        run specified go tool
+	version     print Go version
+	vet         report likely mistakes in packages
+</code></pre>
+<p>其中和编译相关的有build、get、install、run这4个。接下来就依次看看这四个的作用。</p>
+<p>在详细分析这4个命令之前，先罗列一下通用的命令标记，以下这些命令都可适用的：</p>
+<div class="table-container"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-a</td>
+<td>用于强制重新编译所有涉及的 Go 语言代码包（包括 Go 语言标准库中的代码包），即使它们已经是最新的了。该标记可以让我们有机会通过改动底层的代码包做一些实验。</td>
+</tr>
+<tr>
+<td>-n</td>
+<td>使命令仅打印其执行过程中用到的所有命令，而不去真正执行它们。如果不只想查看或者验证命令的执行过程，而不想改变任何东西，使用它正好合适。</td>
+</tr>
+<tr>
+<td>-race</td>
+<td>用于检测并报告指定 Go 语言程序中存在的数据竞争问题。当用 Go 语言编写并发程序的时候，这是很重要的检测手段之一。</td>
+</tr>
+<tr>
+<td>-v</td>
+<td>用于打印命令执行过程中涉及的代码包。这一定包括我们指定的目标代码包，并且有时还会包括该代码包直接或间接依赖的那些代码包。这会让你知道哪些代码包被执行过了。</td>
+</tr>
+<tr>
+<td>-work</td>
+<td>用于打印命令执行时生成和使用的临时工作目录的名字，且命令执行完成后不删除它。这个目录下的文件可能会对你有用，也可以从侧面了解命令的执行过程。如果不添加此标记，那么临时工作目录会在命令执行完毕前删除。</td>
+</tr>
+<tr>
+<td>-x</td>
+<td>使命令打印其执行过程中用到的所有命令，并同时执行它们。</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="1-go-run"><a href="#1-go-run" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1-go-run" class="headings">1. go run</a></h3>
+<p>专门用来运行命令源码文件的命令，<strong>注意，这个命令不是用来运行所有 Go 的源码文件的！</strong></p>
+<p>go run 命令只能接受一个命令源码文件以及若干个库源码文件（必须同属于 main 包）作为文件参数，且<strong>不能接受测试源码文件</strong>。它在执行时会检查源码文件的类型。如果参数中有多个或者没有命令源码文件，那么 go run 命令就只会打印错误提示信息并退出，而不会继续执行。</p>
+<p>这个命令具体干了些什么事情呢？来分析分析，我们先重新创建一个新文件：mytest.go，并加入以下代码：</p>
+<pre><code class="language-go">package main
+import &quot;fmt&quot;
+func main(){
+	fmt.Println(&quot;HelloWorld&quot;)
+	fmt.Println(&quot;你好，Go!!!&quot;)
+}
+</code></pre>
+<p>执行go run 配合-n：</p>
+<pre><code class="language-shell">localhost:hello ruby$ go run -n mytest.go 
+
+#
+# command-line-arguments
+#
+
+mkdir -p $WORK/b001/
+cat &gt;$WORK/b001/importcfg &lt;&lt; 'EOF' # internal
+# import config
+packagefile fmt=/usr/local/go/pkg/darwin_amd64/fmt.a
+packagefile runtime=/usr/local/go/pkg/darwin_amd64/runtime.a
+EOF
+cd /Users/ruby/go/src/hello
+/usr/local/go/pkg/tool/darwin_amd64/compile -o $WORK/b001/_pkg_.a -trimpath $WORK/b001 -p main -complete -buildid ieg41NOobNF0eqq3xgnP/ieg41NOobNF0eqq3xgnP -dwarf=false -goversion go1.12.1 -D _/Users/ruby/go/src/hello -importcfg $WORK/b001/importcfg -pack -c=4 ./mytest.go
+/usr/local/go/pkg/tool/darwin_amd64/buildid -w $WORK/b001/_pkg_.a # internal
+cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal
+... # 此处省略
+EOF
+mkdir -p $WORK/b001/exe/
+cd .
+/usr/local/go/pkg/tool/darwin_amd64/link -o $WORK/b001/exe/mytest -importcfg $WORK/b001/importcfg.link -s -w -buildmode=exe -buildid=vpgT856LhbZPXp6WeHib/ieg41NOobNF0eqq3xgnP/ieg41NOobNF0eqq3xgnP/vpgT856LhbZPXp6WeHib -extld=clang $WORK/b001/_pkg_.a
+$WORK/b001/exe/mytest
+localhost:hello ruby$ 
+
+</code></pre>
+<p>运行效果图：</p>
+<p><img src="/img/png/gomingling4.gif" alt="gomingling4"></p>
+<p>这里可以看到创建了两个临时文件夹 b001 和 exe，先执行了 compile 命令，然后 link，生成了归档文件.a 和 最终可执行文件，最终的可执行文件放在 exe 文件夹里面。命令的最后一步就是执行了可执行文件。</p>
+<p>总结一下如下图：</p>
+<p><img src="/img/png/gomingling5.jpg" alt="gomingling5"></p>
+<p>举个例子，生成的临时文件可以用<code>go run -work</code>看到，比如当前生成的临时文件夹是如下的路径：</p>
+<pre><code class="language-shell">localhost:hello ruby$ go run -work mytest.go 
+WORK=/var/folders/kt/nlhsnpgn6lgd_q16f8j83sbh0000gn/T/go-build593750496
+HelloWorld
+你好，Go!!!
+localhost:hello ruby$ 
+</code></pre>
+<p>我们进入：<code>/var/folders/kt/nlhsnpgn6lgd_q16f8j83sbh0000gn/T/go-build593750496</code>目录，可以看到如下目录结构：</p>
+<p><img src="/img/png/gomingling6.png" alt="gomingling6"></p>
+<p>可以看到，最终<code>go run</code>命令是生成了2个文件，一个是归档文件，一个是可执行文件。</p>
+<p>go run 命令在第二次执行的时候，如果发现导入的代码包没有发生变化，那么 go run 不会再次编译这个导入的代码包。直接静态链接进来。</p>
+<pre><code class="language-shell">localhost:hello ruby$ go run -n mytest.go 
+mkdir -p $WORK/b001/
+cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal
+packagefile command-line-arguments=/Users/ruby/Library/Caches/go-build/6b/6b9577027c8da20b0ae6da790267f558b3b71eea1feb44039fb933b35eaef6f9-d
+packagefile fmt=/usr/local/go/pkg/darwin_amd64/fmt.a
+...
+EOF
+mkdir -p $WORK/b001/exe/
+cd .
+/usr/local/go/pkg/tool/darwin_amd64/link -o $WORK/b001/exe/mytest -importcfg $WORK/b001/importcfg.link -s -w -buildmode=exe -buildid=goiqf_1cemqljgOYzSRA/ieg41NOobNF0eqq3xgnP/MVbHdxOky1BGK6Aq_4bM/goiqf_1cemqljgOYzSRA -extld=clang /Users/ruby/Library/Caches/go-build/6b/6b9577027c8da20b0ae6da790267f558b3b71eea1feb44039fb933b35eaef6f9-d
+$WORK/b001/exe/mytest
+localhost:hello ruby$ 
+
+</code></pre>
+<h3 id="2-go-build"><a href="#2-go-build" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2-go-build" class="headings">2. go build</a></h3>
+<p>go build 命令主要是用于测试编译。在包的编译过程中，若有必要，会同时编译与之相关联的包。</p>
+<ol>
+<li>如果是普通包，当你执行go build命令后，不会产生任何文件。</li>
+<li>如果是main包，当只执行go build命令后，会在当前目录下生成一个可执行文件。如果需要在$GOPATH/bin目录下生成相应的exe文件，需要执行go install 或者使用 go build -o 路径/可执行文件。</li>
+<li>如果某个文件夹下有多个文件，而你只想编译其中某一个文件，可以在 go build 之后加上文件名，例如 go build a.go；go build 命令默认会编译当前目录下的所有go文件。</li>
+<li>你也可以指定编译输出的文件名。比如，我们可以指定go build -o 可执行文件名，默认情况是你的package名(非main包)，或者是第一个源文件的文件名(main包)。</li>
+<li>go build 会忽略目录下以”_”或者”.”开头的go文件。</li>
+<li>如果你的源代码针对不同的操作系统需要不同的处理，那么你可以根据不同的操作系统后缀来命名文件。</li>
+</ol>
+<p>当代码包中有且仅有一个命令源码文件的时候，在文件夹所在目录中执行 go build 命令，会在该目录下生成一个与目录同名的可执行文件。</p>
+<pre><code class="language-shell">// 假设当前文件夹名叫 hello
+localhost:hello ruby$ pwd
+/Users/ruby/go/src/hello
+localhost:hello ruby$ ls
+helloworld.go
+localhost:hello ruby$ go build
+localhost:hello ruby$ ls
+hello		helloworld.go
+localhost:hello ruby$ 
+</code></pre>
+<p>于是在当前目录直接生成了以当前文件夹为名的可执行文件（ 在 Mac 平台下是 Unix executable 文件，在 Windows 平台下是 exe 文件）</p>
+<p><img src="/img/png/gomingling7.png" alt="gomingling7"></p>
+<p>但是这种情况下，如果使用 go install 命令，如果 GOPATH 里面只有一个工作区，就会在当前工作区的 bin 目录下生成相应的可执行文件。如果 GOPATH 下有多个工作区，则是在 GOBIN 下生成对应的可执行文件。</p>
+<pre><code class="language-shell">localhost:hello ruby$ go install
+go install hello: open /usr/local/go/bin/hello: permission denied
+localhost:hello ruby$ 
+</code></pre>
+<p><img src="/img/png/gomingling8.png" alt="gomingling8"></p>
+<blockquote>
+<p>这个问题是因为它需要创建bin目录，然后把可刚才的可执行文件放进去，而目前我们在gopath下还没有bin目录，那么就需要先创建这个文件，而普通用户没有直接创建文件夹的权限，这个和Go语言的命令是没有关系的。我们可以加上sodu 来执行这个命令，表示使用管理员的身份执行，然后输入密码，那么就可以创建bin这个文件夹了。</p>
+</blockquote>
+<p>再次执行：</p>
+<pre><code class="language-shell">localhost:hello ruby$ sudo go install
+Password:
+localhost:hello ruby$ 
+
+</code></pre>
+<p>执行完 go install 会发现可执行文件不见了！去哪里了呢？其实是被移动到了 bin 目录下了（如果 GOPATH 下有多个工作区，就会放在GOBIN 目录下）。</p>
+<p>查看目录：</p>
+<p><img src="/img/png/gomingling9.png" alt="gomingling9"></p>
+<p>那 go build 和 go install 究竟干了些什么呢？</p>
+<p>先来说说 go build。go build 用于编译我们指定的源码文件或代码包以及它们的依赖包。但是<strong>注意如果用来编译非命令源码文件，即库源码文件，go build 执行完是不会产生任何结果的。这种情况下，go build 命令只是检查库源码文件的有效性，只会做检查性的编译，而不会输出任何结果文件。</strong></p>
+<p>go build 编译命令源码文件，则会在该命令的执行目录中生成一个可执行文件，上面的例子也印证了这个过程。</p>
+<p>go build 后面不追加目录路径的话，它就把当前目录作为代码包并进行编译。go build 命令后面如果跟了代码包导入路径作为参数，那么该代码包及其依赖都会被编译。</p>
+<p>go build 命令究竟做了些什么呢？我们可以执行-n这个命令来查看：</p>
+<pre><code class="language-shell">localhost:hello ruby$ go build -n
+
+#
+# hello
+#
+
+mkdir -p $WORK/b001/
+cat &gt;$WORK/b001/importcfg &lt;&lt; 'EOF' # internal
+# import config
+packagefile fmt=/usr/local/go/pkg/darwin_amd64/fmt.a
+packagefile runtime=/usr/local/go/pkg/darwin_amd64/runtime.a
+EOF
+cd /Users/ruby/go/src/hello
+/usr/local/go/pkg/tool/darwin_amd64/compile -o $WORK/b001/_pkg_.a -trimpath $WORK/b001 -p main -complete -buildid PXDetO1R1NhLFMK5QGUc/PXDetO1R1NhLFMK5QGUc -goversion go1.12.1 -D &quot;&quot; -importcfg $WORK/b001/importcfg -pack -c=4 ./helloworld.go
+/usr/local/go/pkg/tool/darwin_amd64/buildid -w $WORK/b001/_pkg_.a # internal
+cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal
+packagefile hello=$WORK/b001/_pkg_.a
+...
+EOF
+mkdir -p $WORK/b001/exe/
+cd .
+/usr/local/go/pkg/tool/darwin_amd64/link -o $WORK/b001/exe/a.out -importcfg $WORK/b001/importcfg.link -buildmode=exe -buildid=diTh1q6kcbGRIX3aj3mU/PXDetO1R1NhLFMK5QGUc/PXDetO1R1NhLFMK5QGUc/diTh1q6kcbGRIX3aj3mU -extld=clang $WORK/b001/_pkg_.a
+/usr/local/go/pkg/tool/darwin_amd64/buildid -w $WORK/b001/exe/a.out # internal
+mv $WORK/b001/exe/a.out hello
+localhost:hello ruby$ 
+
+</code></pre>
+<p>可以看到，执行过程和 go run 大体相同，唯一不同的就是在最后一步，go run 是执行了可执行文件，但是 go build 命令，只是把库源码文件编译了一遍，然后把可执行文件移动到了当前目录的文件夹中。</p>
+<p>总结一下如下图：</p>
+<p><img src="/img/png/gomingling10.jpg" alt="gomingling10"></p>
+<p>最后：</p>
+<p><img src="/img/png/zhixingyuanli.png" alt=""></p>
+<h3 id="3-go-install"><a href="#3-go-install" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:3-go-install" class="headings">3. go install</a></h3>
+<p>go install 命令是用来编译并安装代码包或者源码文件的。</p>
+<p>go install 命令在内部实际上分成了两步操作：第一步是生成结果文件(可执行文件或者.a包)，第二步会把编译好的结果移到<code>$GOPATH/pkg</code>或者​<code>$GOPATH/bin</code>。</p>
+<p>可执行文件： 一般是 go install 带main函数的go文件产生的，有函数入口，所有可以直接运行。</p>
+<p>.a应用包： 一般是 go install 不包含main函数的go文件产生的，没有函数入口，只能被调用。</p>
+<p>go install 用于编译并安装指定的代码包及它们的依赖包。当指定的代码包的依赖包还没有被编译和安装时，该命令会先去处理依赖包。与 go build 命令一样，传给 go install 命令的代码包参数应该以导入路径的形式提供。并且，go build 命令的绝大多数标记也都可以用于
+实际上，go install 命令只比 go build 命令多做了一件事，即：安装编译后的结果文件到指定目录。</p>
+<p>安装代码包会在当前工作区的 pkg 的平台相关目录下生成归档文件（即 .a 文件）。
+安装命令源码文件会在当前工作区的 bin 目录（如果 GOPATH 下有多个工作区，就会放在 GOBIN 目录下）生成可执行文件。</p>
+<p>同样，go install 命令如果后面不追加任何参数，它会把当前目录作为代码包并安装。这和 go build 命令是完全一样的。</p>
+<p>go install 命令后面如果跟了代码包导入路径作为参数，那么该代码包及其依赖都会被安装。</p>
+<p>go install 命令后面如果跟了命令源码文件以及相关库源码文件作为参数的话，只有这些文件会被编译并安装。</p>
+<p>go install 命令究竟做了些什么呢？</p>
+<pre><code class="language-shell">localhost:hello ruby$ go install -n
+
+#
+# hello
+#
+
+mkdir -p $WORK/b001/
+cat &gt;$WORK/b001/importcfg &lt;&lt; 'EOF' # internal
+# import config
+packagefile fmt=/usr/local/go/pkg/darwin_amd64/fmt.a
+packagefile runtime=/usr/local/go/pkg/darwin_amd64/runtime.a
+EOF
+cd /Users/ruby/go/src/hello
+/usr/local/go/pkg/tool/darwin_amd64/compile -o $WORK/b001/_pkg_.a -trimpath $WORK/b001 -p main -complete -buildid E1CTs4eXkD5M28s_FQXT/E1CTs4eXkD5M28s_FQXT -goversion go1.12.1 -D &quot;&quot; -importcfg $WORK/b001/importcfg -pack -c=4 ./helloworld.go
+/usr/local/go/pkg/tool/darwin_amd64/buildid -w $WORK/b001/_pkg_.a # internal
+cat &gt;$WORK/b001/importcfg.link &lt;&lt; 'EOF' # internal
+packagefile hello=$WORK/b001/_pkg_.a
+packagefile fmt=/usr/local/go/pkg/darwin_amd64/fmt.a
+...
+EOF
+mkdir -p $WORK/b001/exe/
+cd .
+/usr/local/go/pkg/tool/darwin_amd64/link -o $WORK/b001/exe/a.out -importcfg $WORK/b001/importcfg.link -buildmode=exe -buildid=FJ6kJTmN9rcWcwLhqfiQ/E1CTs4eXkD5M28s_FQXT/E1CTs4eXkD5M28s_FQXT/FJ6kJTmN9rcWcwLhqfiQ -extld=clang $WORK/b001/_pkg_.a
+/usr/local/go/pkg/tool/darwin_amd64/buildid -w $WORK/b001/exe/a.out # internal
+mkdir -p /usr/local/go/bin/
+mv $WORK/b001/exe/a.out /usr/local/go/bin/hello
+localhost:hello ruby$ 
+
+</code></pre>
+<p>前面几步依旧和 go run 、go build 完全一致，只是最后一步的差别，go install 会把命令源码文件安装到当前工作区的 bin 目录（如果 GOPATH 下有多个工作区，就会放在 GOBIN 目录下）。如果是库源码文件，就会被安装到当前工作区的 pkg 的平台相关目录下。</p>
+<p>总结一下如下图：</p>
+<p><img src="/img/png/gomingling11.jpg" alt="gomingling11"></p>
+<p>在安装多个库源码文件时有可能遇到如下的问题：</p>
+<pre><code class="language-shell">localhost:hello ruby$  go install envir.go fpath.go ipath.go pnode.go util.go
+go install: no install location for .go files listed on command line (GOBIN not set)
+</code></pre>
+<p>而且，在我们为环境变量 GOBIN 设置了正确的值之后，这个错误提示信息仍然会出现。这是因为，只有在安装命令源码文件的时候，命令程序才会将环境变量 GOBIN 的值作为结果文件的存放目录。而在安装库源码文件时，在命令程序内部的代表结果文件存放目录路径的那个变量不会被赋值。最后，命令程序会发现它依然是个无效的空值。所以，命令程序会同样返回一个关于“无安装位置”的错误。这就引出一个结论，我们只能使用安装代码包的方式来安装库源码文件，而不能在 go install 命令罗列并安装它们。另外，go install 命令目前无法接受标记<code>-o</code>以自定义结果文件的存放位置。这也从侧面说明了
+go install 命令不支持针对库源码文件的安装操作。</p>
+<h3 id="4-go-get"><a href="#4-go-get" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:4-go-get" class="headings">4. go get</a></h3>
+<p>go get 命令用于从远程代码仓库（比如 Github ）上下载并安装代码包。<strong>注意，go get 命令会把当前的代码包下载到 $GOPATH 中的第一个工作区的 src 目录中，并安装。</strong></p>
+<blockquote>
+<p>使用 go get 下载第三方包的时候，依旧会下载到 $GOPATH 的第一个工作空间，而非 vendor 目录。当前工作链中并没有真正意义上的包依赖管理，不过好在有不少第三方工具可选。</p>
+</blockquote>
+<p>如果在 go get 下载过程中加入<code>-d</code> 标记，那么下载操作只会执行下载动作，而不执行安装动作。比如有些非常特殊的代码包在安装过程中需要有特殊的处理，所以我们需要先下载下来，所以就会用到<code>-d</code> 标记。</p>
+<p>还有一个很有用的标记是<code>-u</code>标记，加上它可以利用网络来更新已有的代码包及其依赖包。如果已经下载过一个代码包，但是这个代码包又有更新了，那么这时候可以直接用<code>-u</code>标记来更新本地的对应的代码包。如果不加这个<code>-u</code>标记，执行 go get 一个已有的代码包，会发现命令什么都不执行。只有加了<code>-u</code>标记，命令会去执行 git pull 命令拉取最新的代码包的最新版本，下载并安装。</p>
+<p>命令 go get 还有一个很值得称道的功能——智能下载。在使用它检出或更新代码包之后，它会寻找与本地已安装 Go 语言的版本号相对应的标签（tag）或分支（branch）。比如，本机安装 Go 语言的版本是1.x，那么 go get 命令会在该代码包的远程仓库中寻找名为 “go1” 的标签或者分支。如果找到指定的标签或者分支，则将本地代码包的版本切换到此标签或者分支。如果没有找到指定的标签或者分支，则将本地代码包的版本切换到主干的最新版本。</p>
+<p>go get 常用的一些标记如下：</p>
+<div class="table-container"><table>
+<thead>
+<tr>
+<th>标记名称</th>
+<th>标记描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-d</td>
+<td>让命令程序只执行下载动作，而不执行安装动作。</td>
+</tr>
+<tr>
+<td>-f</td>
+<td>仅在使用<code>-u</code>标记时才有效。该标记会让命令程序忽略掉对已下载代码包的导入路径的检查。如果下载并安装的代码包所属的项目是你从别人那里 Fork 过来的，那么这样做就尤为重要了。</td>
+</tr>
+<tr>
+<td>-fix</td>
+<td>让命令程序在下载代码包后先执行修正动作，而后再进行编译和安装。</td>
+</tr>
+<tr>
+<td>-insecure</td>
+<td>允许命令程序使用非安全的 scheme（如 HTTP ）去下载指定的代码包。如果你用的代码仓库（如公司内部的 Gitlab ）没有HTTPS 支持，可以添加此标记。请在确定安全的情况下使用它。</td>
+</tr>
+<tr>
+<td>-t</td>
+<td>让命令程序同时下载并安装指定的代码包中的测试源码文件中依赖的代码包。</td>
+</tr>
+<tr>
+<td>-u</td>
+<td>让命令利用网络来更新已有代码包及其依赖包。默认情况下，该命令只会从网络上下载本地不存在的代码包，而不会更新已有的代码包。</td>
+</tr>
+</tbody>
+</table></div>
+<p>go get 命令究竟做了些什么呢？我们还是来打印一下每一步的执行过程。</p>
+<pre><code class="language-shell">localhost:hello ruby$ go get -x github.com/go-errors/errors
+cd .
+git clone https://github.com/go-errors/errors /Users/ruby/go/src/github.com/go-errors/errors
+cd /Users/ruby/go/src/github.com/go-errors/errors
+git submodule update --init --recursive
+cd /Users/ruby/go/src/github.com/go-errors/errors
+git show-ref
+cd /Users/ruby/go/src/github.com/go-errors/errors
+git submodule update --init --recursive
+WORK=/var/folders/kt/nlhsnpgn6lgd_q16f8j83sbh0000gn/T/go-build188558329
+localhost:hello ruby$ 
+</code></pre>
+<p>效果图：</p>
+<p><img src="/img/png/gomingling12.png" alt="gomingling12"></p>
+<p>这里可以很明显的看到，执行完 go get 命令以后，会调用 git clone 方法下载源码，并编译，最终会把库源码文件编译成归档文件安装到 pkg 对应的相关平台目录下。</p>
+<p><img src="/img/png/gomingling13.png" alt="gomingling13"></p>
+<p>总结一下如下图：</p>
+<p><img src="/img/png/gomingling14.jpg" alt="gomingling14"></p>
+<h3 id="5-其他命令"><a href="#5-其他命令" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:5-其他命令" class="headings">5. 其他命令</a></h3>
+<p><strong>go clean</strong></p>
+<p>go clean 命令是用来移除当前源码包里面编译生成的文件，这些文件包括</p>
+<ul>
+<li>_obj/ 旧的object目录，由Makefiles遗留</li>
+<li>_test/ 旧的test目录，由Makefiles遗留</li>
+<li>_testmain.go 旧的gotest文件，由Makefiles遗留</li>
+<li>test.out 旧的test记录，由Makefiles遗留</li>
+<li>build.out 旧的test记录，由Makefiles遗留</li>
+<li>*.[568ao] object文件，由Makefiles遗留</li>
+<li>DIR(.exe) 由 go build 产生</li>
+<li>DIR.test(.exe) 由 go test -c 产生</li>
+<li>MAINFILE(.exe) 由 go build MAINFILE.go产生</li>
+</ul>
+<p><strong>go fmt</strong></p>
+<p>go fmt 命令主要是用来帮你格式化所写好的代码文件。</p>
+<p>比如我们写了一个格式很糟糕的 test.go 文件，我们只需要使用 fmt go test.go 命令，就可以让go帮我们格式化我们的代码文件。但是我们一般很少使用这个命令，因为我们的开发工具一般都带有保存时自动格式化功能，这个功能底层其实就是调用了 go fmt 命令而已。</p>
+<p>使用go fmt命令，更多时候是用gofmt，而且需要参数-w，否则格式化结果不会写入文件。gofmt -w src，可以格式化整个项目。</p>
+<p><strong>go test</strong></p>
+<p>go test 命令，会自动读取源码目录下面名为*_test.go的文件，生成并运行测试用的可执行文件。默认的情况下，不需要任何的参数，它会自动把你源码包下面所有test文件测试完毕，当然你也可以带上参数，详情请参考go help testflag</p>
+<p><strong>go doc</strong></p>
+<p>go doc 命令其实就是一个很强大的文档工具。</p>
+<p>如何查看相应package的文档呢？ 例如builtin包，那么执行go doc builtin；如果是http包，那么执行go doc net/http；查看某一个包里面的函数，那么执行go doc fmt Printf；也可以查看相应的代码，执行go doc -src fmt Printf；</p>
+<pre><code class="language-shell"># 查看net/http包
+localhost:hello ruby$ go doc net/http
+# 查看time包
+localhost:hello ruby$ go doc time
+# 查看某个包里的指定函数
+localhost:hello ruby$ go doc fmt Printf
+</code></pre>
+<p>通过命令在命令行执行 go doc -http=:端口号，比如godoc -http=:8080。然后在浏览器中打开127.0.0.1:8080，你将会看到一个golang.org的本地copy版本，通过它你可以查询pkg文档等其它内容。如果你设置了GOPATH，在pkg分类下，不但会列出标准包的文档，还会列出你本地GOPATH中所有项目的相关文档，这对于经常被限制访问的用户来说是一个不错的选择。</p>
+<pre><code class="language-shell">localhost:hello ruby$ godoc -http=:9527
+</code></pre>
+<p>go fix 用来修复以前老版本的代码到新版本，例如go1之前老版本的代码转化到go1</p>
+<p>go version 查看go当前的版本</p>
+<p>go env 查看当前go的环境变量</p>
+<p>go list 列出当前全部安装的package</p>
+<p>本文部门文字和图片引自：https://www.jianshu.com/p/35a4ec1b3067</p>
+<p>千锋Go语言的学习群：784190273</p>
+<p>对应视频地址：</p>
+<p><a href="https://www.bilibili.com/video/av56018934" target="_blank" rel="noopener">https://www.bilibili.com/video/av56018934</a></p>
+<p><a href="https://www.bilibili.com/video/av47467197" target="_blank" rel="noopener">https://www.bilibili.com/video/av47467197</a></p>
+<p>源代码：</p>
+<p><a href="https://github.com/rubyhan1314/go_foundation" target="_blank" rel="noopener">https://github.com/rubyhan1314/go_foundation</a></p>
+
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">作者</span>：<a href="https://songx.fun/" class="p-author h-card" target="_blank" rel="noopener">songx</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">链接</span>：<a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/" target="_blank" rel="noopener">http://www.songx.fun/blog/day01-15go语言基础/day01_第9节_go的命令以及go的执行原理/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">许可</span>：<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2022-08-04 11:19:59 CST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2022-08-04</text><text x="915" y="140" textLength="650" transform="scale(.1)">2022-08-04</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        <div class="post-share">
+
+        
+
+        <div class="share-items">
+
+            
+                <div class="share-item twitter">
+                    
+                    <a href="https://twitter.com/share?url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;text=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;hashtags=golang,&amp;via=reuixiy" title="分享到「Twitter」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon twitter-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item facebook">
+                    
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;hashtag=%23golang" title="分享到「Facebook」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon facebook-icon"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item linkedin">
+                    
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;title=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;summary=%e5%91%bd%e4%bb%a4%e6%ba%90%e7%a0%81%e6%96%87%e4%bb%b6%e8%a2%ab%e5%ae%89%e8%a3%85%e4%bb%a5%e5%90%8e%ef%bc%8cGOPATH%20%e5%a6%82%e6%9e%9c%e5%8f%aa%e6%9c%89%e4%b8%80%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e9%82%a3%e4%b9%88%e7%9b%b8%e5%ba%94%e7%9a%84%e5%8f%af%e6%89%a7%e8%a1%8c%e6%96%87%e4%bb%b6%e4%bc%9a%e8%a2%ab%e5%ad%98%e6%94%be%e5%bd%93%e5%89%8d%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9a%84%20bin%20%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%ef%bc%9b%e5%a6%82%e6%9e%9c%e6%9c%89%e5%a4%9a%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e5%b0%b1%e4%bc%9a%e5%ae%89%e8%a3%85%e5%88%b0%20GOBIN%20%e6%8c%87%e5%90%91%e7%9a%84%e7%9b%ae%e5%bd%95%e4%b8%8b%e3%80%82&amp;source=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「LinkedIn」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon linkedin-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item telegram">
+                    
+                    <a href="https://t.me/share/url?url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;text=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4" title="分享到「Telegram」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon telegram-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item weibo">
+                    
+                    <a href="https://service.weibo.com/share/share.php?&amp;url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;title=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;pic=http://www.songx.fun/img/png/yuanmawenjian1.png&amp;searchPic=false" title="分享到「新浪微博」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon weibo-icon"><path d="M407 177.6c7.6-24-13.4-46.8-37.4-41.7-22 4.8-28.8-28.1-7.1-32.8 50.1-10.9 92.3 37.1 76.5 84.8-6.8 21.2-38.8 10.8-32-10.3zM214.8 446.7C108.5 446.7 0 395.3 0 310.4c0-44.3 28-95.4 76.3-143.7C176 67 279.5 65.8 249.9 161c-4 13.1 12.3 5.7 12.3 6 79.5-33.6 140.5-16.8 114 51.4-3.7 9.4 1.1 10.9 8.3 13.1 135.7 42.3 34.8 215.2-169.7 215.2zm143.7-146.3c-5.4-55.7-78.5-94-163.4-85.7-84.8 8.6-148.8 60.3-143.4 116s78.5 94 163.4 85.7c84.8-8.6 148.8-60.3 143.4-116zM347.9 35.1c-25.9 5.6-16.8 43.7 8.3 38.3 72.3-15.2 134.8 52.8 111.7 124-7.4 24.2 29.1 37 37.4 12 31.9-99.8-55.1-195.9-157.4-174.3zm-78.5 311c-17.1 38.8-66.8 60-109.1 46.3-40.8-13.1-58-53.4-40.3-89.7 17.7-35.4 63.1-55.4 103.4-45.1 42 10.8 63.1 50.2 46 88.5zm-86.3-30c-12.9-5.4-30 .3-38 12.9-8.3 12.9-4.3 28 8.6 34 13.1 6 30.8.3 39.1-12.9 8-13.1 3.7-28.3-9.7-34zm32.6-13.4c-5.1-1.7-11.4.6-14.3 5.4-2.9 5.1-1.4 10.6 3.7 12.9 5.1 2 11.7-.3 14.6-5.4 2.8-5.2 1.1-10.9-4-12.9z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item douban">
+                    
+                    <a href="https://www.douban.com/share/service?href=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;name=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;text=%e5%91%bd%e4%bb%a4%e6%ba%90%e7%a0%81%e6%96%87%e4%bb%b6%e8%a2%ab%e5%ae%89%e8%a3%85%e4%bb%a5%e5%90%8e%ef%bc%8cGOPATH%20%e5%a6%82%e6%9e%9c%e5%8f%aa%e6%9c%89%e4%b8%80%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e9%82%a3%e4%b9%88%e7%9b%b8%e5%ba%94%e7%9a%84%e5%8f%af%e6%89%a7%e8%a1%8c%e6%96%87%e4%bb%b6%e4%bc%9a%e8%a2%ab%e5%ad%98%e6%94%be%e5%bd%93%e5%89%8d%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9a%84%20bin%20%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%ef%bc%9b%e5%a6%82%e6%9e%9c%e6%9c%89%e5%a4%9a%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e5%b0%b1%e4%bc%9a%e5%ae%89%e8%a3%85%e5%88%b0%20GOBIN%20%e6%8c%87%e5%90%91%e7%9a%84%e7%9b%ae%e5%bd%95%e4%b8%8b%e3%80%82" title="分享到「豆瓣」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon douban-icon"><path d="M.643.92v2.412h22.714V.92H.643zm1.974 4.926v9.42h18.764v-9.42H2.617zm2.72 2.408H18.69v4.605H5.338V8.254zm1.657 7.412l-2.512.938c1.037 1.461 1.87 2.825 2.512 4.091H0v2.385h24v-2.385h-6.678c.818-1.176 1.589-2.543 2.303-4.091l-2.73-.938a29.952 29.952 0 01-2.479 5.03h-4.75c-.786-1.962-1.677-3.641-2.672-5.03Z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qq">
+                    
+                    <a href="https://connect.qq.com/widget/shareqq/index.html?url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;title=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;summary=%e5%91%bd%e4%bb%a4%e6%ba%90%e7%a0%81%e6%96%87%e4%bb%b6%e8%a2%ab%e5%ae%89%e8%a3%85%e4%bb%a5%e5%90%8e%ef%bc%8cGOPATH%20%e5%a6%82%e6%9e%9c%e5%8f%aa%e6%9c%89%e4%b8%80%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e9%82%a3%e4%b9%88%e7%9b%b8%e5%ba%94%e7%9a%84%e5%8f%af%e6%89%a7%e8%a1%8c%e6%96%87%e4%bb%b6%e4%bc%9a%e8%a2%ab%e5%ad%98%e6%94%be%e5%bd%93%e5%89%8d%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9a%84%20bin%20%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%ef%bc%9b%e5%a6%82%e6%9e%9c%e6%9c%89%e5%a4%9a%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e5%b0%b1%e4%bc%9a%e5%ae%89%e8%a3%85%e5%88%b0%20GOBIN%20%e6%8c%87%e5%90%91%e7%9a%84%e7%9b%ae%e5%bd%95%e4%b8%8b%e3%80%82&amp;pics=http://www.songx.fun/img/png/yuanmawenjian1.png&amp;site=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「QQ」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qq-icon"><path d="M433.754 420.445c-11.526 1.393-44.86-52.741-44.86-52.741 0 31.345-16.136 72.247-51.051 101.786 16.842 5.192 54.843 19.167 45.803 34.421-7.316 12.343-125.51 7.881-159.632 4.037-34.122 3.844-152.316 8.306-159.632-4.037-9.045-15.25 28.918-29.214 45.783-34.415-34.92-29.539-51.059-70.445-51.059-101.792 0 0-33.334 54.134-44.859 52.741-5.37-.65-12.424-29.644 9.347-99.704 10.261-33.024 21.995-60.478 40.144-105.779C60.683 98.063 108.982.006 224 0c113.737.006 163.156 96.133 160.264 214.963 18.118 45.223 29.912 72.85 40.144 105.778 21.768 70.06 14.716 99.053 9.346 99.704z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qzone">
+                    
+                    <a href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86/&amp;title=Go%e7%9a%84%e6%89%a7%e8%a1%8c%e5%8e%9f%e7%90%86%e4%bb%a5%e5%8f%8aGo%e7%9a%84%e5%91%bd%e4%bb%a4&amp;summary=%e5%91%bd%e4%bb%a4%e6%ba%90%e7%a0%81%e6%96%87%e4%bb%b6%e8%a2%ab%e5%ae%89%e8%a3%85%e4%bb%a5%e5%90%8e%ef%bc%8cGOPATH%20%e5%a6%82%e6%9e%9c%e5%8f%aa%e6%9c%89%e4%b8%80%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e9%82%a3%e4%b9%88%e7%9b%b8%e5%ba%94%e7%9a%84%e5%8f%af%e6%89%a7%e8%a1%8c%e6%96%87%e4%bb%b6%e4%bc%9a%e8%a2%ab%e5%ad%98%e6%94%be%e5%bd%93%e5%89%8d%e5%b7%a5%e4%bd%9c%e5%8c%ba%e7%9a%84%20bin%20%e6%96%87%e4%bb%b6%e5%a4%b9%e4%b8%8b%ef%bc%9b%e5%a6%82%e6%9e%9c%e6%9c%89%e5%a4%9a%e4%b8%aa%e5%b7%a5%e4%bd%9c%e5%8c%ba%ef%bc%8c%e5%b0%b1%e4%bc%9a%e5%ae%89%e8%a3%85%e5%88%b0%20GOBIN%20%e6%8c%87%e5%90%91%e7%9a%84%e7%9b%ae%e5%bd%95%e4%b8%8b%e3%80%82&amp;pics=http://www.songx.fun/img/png/yuanmawenjian1.png&amp;site=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「QQ 空间」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon qzone-icon"><path d="M23.985 9.202c-.032-.099-.127-.223-.334-.258-.207-.036-7.351-1.406-7.351-1.406s-.105-.022-.198-.07c-.092-.047-.127-.167-.127-.167S12.447.956 12.349.77C12.25.583 12.104.532 12 .532c-.104 0-.251.051-.349.238-.098.186-3.626 6.531-3.626 6.531s-.035.12-.128.167c-.092.047-.197.07-.197.07S.556 8.908.348 8.943c-.208.036-.302.16-.333.258a.477.477 0 0 0 .125.449l5.362 5.49s.072.08.119.172c.016.104.005.21.005.21s-1.189 7.242-1.22 7.45.075.369.159.43c.083.062.233.106.421.013.189-.093 6.812-3.261 6.812-3.261s.098-.044.201-.061c.103-.017.201.061.201.061s6.623 3.168 6.812 3.261c.188.094.338.049.421-.013a.463.463 0 0 0 .159-.43c-.021-.14-.93-5.677-.93-5.677.876-.54 1.425-1.039 1.849-1.747-2.594.969-6.006 1.717-9.415 1.866-.915.041-2.41.097-3.473-.015-.678-.071-1.17-.144-1.243-.438-.053-.215.054-.46.545-.831a2640.5 2640.5 0 0 1 2.861-2.155c1.285-.968 3.559-2.47 3.559-2.731 0-.285-2.144-.781-4.037-.781-1.945 0-2.275.132-2.811.168-.488.034-.769.005-.804-.138-.06-.248.183-.389.588-.568.709-.314 1.86-.594 1.984-.626.194-.052 3.082-.805 5.618-.535 1.318.14 3.244.668 3.244 1.276 0 .342-1.721 1.494-3.225 2.597-1.149.843-2.217 1.561-2.217 1.688 0 .342 3.533 1.241 6.689 1.01l.003-.022c.048-.092.119-.172.119-.172l5.362-5.49a.477.477 0 0 0 .127-.449z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qrcode">
+                    <div class="qrcode-container" title="通过「二维码」"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qrcode-icon"><path d="M0 224h192V32H0v192zM64 96h64v64H64V96zm192-64v192h192V32H256zm128 128h-64V96h64v64zM0 480h192V288H0v192zm64-128h64v64H64v-64zm352-64h32v128h-96v-32h-32v96h-64V288h96v32h64v-32zm0 160h32v32h-32v-32zm-64 0h32v32h-32v-32z"/></svg><div id="qrcode-img"></div>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<script>
+    const typeNumber = 0;
+    const errorCorrectionLevel = 'L';
+    const qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData('http:\/\/www.songx.fun\/blog\/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80\/day01_%E7%AC%AC9%E8%8A%82_go%E7%9A%84%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8Ago%E7%9A%84%E6%89%A7%E8%A1%8C%E5%8E%9F%E7%90%86\/');
+    qr.make();
+    document.getElementById('qrcode-img').innerHTML = qr.createImgTag();
+</script>
+
+                </div>
+            
+
+        </div>
+
+    </div>
+
+
+
+
+        
+    
+    
+        <div class="related-posts">
+            <h2 class="related-title">相关文章：<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon related-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg></h2>
+            <ul class="related-list">
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day04_%E5%88%86%E6%94%AF%E8%AF%AD%E5%8F%A5/" class="related-link">程序的流程结构</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day12_%E6%8C%87%E9%92%88/" class="related-link">指针</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day08_map%E7%9A%84%E4%BD%BF%E7%94%A8/" class="related-link">集合(Map)</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC6%E8%8A%82_go%E8%AF%AD%E8%A8%80%E8%83%BD%E5%81%9A%E4%BB%80%E4%B9%88/" class="related-link">Go语言能做什么</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day14_%E7%AC%AC2%E8%8A%82_%E6%8E%A5%E5%8F%A3/" class="related-link">接口</a>
+                    </li>
+                
+            </ul>
+        </div>
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/golang/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>golang</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+                <li class="post-nav-prev">
+                    <a href="/blog/day83-85go-micro%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%A1%86%E6%9E%B6/day84_go-micro%E4%BD%BF%E7%94%A8%E4%B8%80/" rel="prev">&lt; go-micro使用(一)</a>
+                </li>
+            
+            
+                <li class="post-nav-next">
+                    <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC3%E8%8A%82_go%E8%AF%AD%E8%A8%80logo%E5%92%8C%E7%89%88%E6%9C%AC/" rel="next">Go语言logo和版本 &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;1969–2022&nbsp;<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon footer-icon"><path d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"/></svg>&nbsp;songx</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+
+            
+    
+        <ul class="socials"><li class="socials-item">
+                    <a href="/rss.xml" target="_blank" rel="external noopener" title="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="mailto:reuixiy@gmail.com" target="_blank" rel="external noopener" title="Email"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://github.com/reuixiy" target="_blank" rel="external noopener" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://twitter.com/reuixiy" target="_blank" rel="external noopener" title="Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://t.me/yixiuer" target="_blank" rel="external noopener" title="Telegram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon social-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </li></ul>
+    
+
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    let imgNodes = document.querySelectorAll('div.post-body img');
+    imgNodes = Array.from(imgNodes).filter(node => node.parentNode.tagName !== "A");
+
+    mediumZoom(imgNodes, {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+
+
+    </body>
+</html>

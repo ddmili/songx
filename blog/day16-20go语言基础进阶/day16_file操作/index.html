@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article#">
+    <meta charset="UTF-8" />
+
+    <meta name="generator" content="Hugo 0.97.3" /><meta name="theme-color" content="#fff" />
+    <meta name="color-scheme" content="light dark">
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
+    
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <title>File文件操作 | 踏步而行</title>
+
+    <link rel="stylesheet" href="/css/meme.min.a1ab2391e97738d70fe91d80a0f8a479a36b7e06dfd1fcf07454b4a451b89ccb.css"/>
+
+    
+    
+        <script src="/js/meme.min.d001b05c04cce10a61f2d919c43f9f563889ea176cb110b472e7e417f41abd77.js"></script>
+
+<script src="/js/prism.js"></script>
+
+    
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" media="print" onload="this.media='all'" />
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB&#43;Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&amp;family=Noto&#43;Serif&#43;SC:wght@400;500;700&amp;family=Source&#43;Code&#43;Pro:ital,wght@0,400;0,700;1,400;1,700&amp;display=swap" /></noscript>
+
+    <meta name="author" content="songx" /><meta name="description" content="首先，file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。" />
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#2a6df4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="踏步而行" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="踏步而行" />
+    <meta name="msapplication-starturl" content="../../../" />
+    <meta name="msapplication-TileColor" content="#fff" />
+    <meta name="msapplication-TileImage" content="../../../icons/mstile-150x150.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    
+    
+
+      
+  <link rel="stylesheet" href="/css/prism.css" />
+
+
+    
+    <link rel="canonical" href="http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/" />
+    
+
+<script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "datePublished": "2022-08-01T21:29:20+02:00",
+        "dateModified": "2022-08-04T11:48:42+08:00",
+        "url": "http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/",
+        "headline": "File文件操作",
+        "description": "首先，file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。",
+        "inLanguage" : "zh-CN",
+        "articleSection": "blog",
+        "wordCount":  13109 ,
+        "image": ["http://www.songx.fun/img/png/fileyunxing1.png","http://www.songx.fun/img/png/copyfile.png","http://www.songx.fun/img/png/20190316084535903.jpg","http://www.songx.fun/img/png/WX20190702-124039.png","http://www.songx.fun/img/png/WX20190702-124719.png","http://www.songx.fun/img/png/WX20190703-155441.png","http://www.songx.fun/img/png/WX20190703-155739.png","http://www.songx.fun/img/png/WX20190703-155821.png","http://www.songx.fun/img/png/WX20190704-113648.png","http://www.songx.fun/img/png/WX20190704-122357.png","http://www.songx.fun/img/png/WX20190704-172759.png","http://www.songx.fun/img/png/WX20190720-210316.png"],
+        "author": {
+            "@type": "Person",
+            "description": "Those failed to defeat you,will eventually make you stronger.",
+            "email": "245935836@163.com",
+            "image": "http://www.songx.fun/icons/apple-touch-icon.png",
+            "url": "https://songx.fun/",
+            "name": "songx"
+        },
+        "license": "[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)",
+        "publisher": {
+            "@type": "Organization",
+            "name": "踏步而行",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "http://www.songx.fun/icons/apple-touch-icon.png"
+            },
+            "url": "http://www.songx.fun/"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebSite",
+            "@id": "http://www.songx.fun/"
+        }
+    }
+</script>
+
+    
+
+<meta name="twitter:card" content="summary_large_image" />
+
+
+<meta name="twitter:site" content="@reuixiy" />
+<meta name="twitter:creator" content="@songx" />
+
+    
+
+
+
+<meta property="og:title" content="File文件操作" />
+<meta property="og:description" content="首先，file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。" />
+<meta property="og:url" content="http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/" />
+<meta property="og:site_name" content="踏步而行" />
+<meta property="og:locale" content="zh" /><meta property="og:image" content="http://www.songx.fun/img/png/fileyunxing1.png" />
+<meta property="og:type" content="article" />
+    <meta property="article:published_time" content="2022-08-01T21:29:20&#43;02:00" />
+    <meta property="article:modified_time" content="2022-08-04T11:48:42&#43;08:00" />
+    
+    <meta property="article:section" content="blog" />
+
+
+
+    
+    
+
+    
+</head>
+
+    <body>
+        <div class="container">
+            
+    <header class="header">
+        
+            <div class="header-wrapper">
+                <div class="header-inner single">
+                    
+    <div class="site-brand">
+        
+            <a href="/" class="brand">踏步而行</a>
+        
+    </div>
+
+                    <nav class="nav">
+    <ul class="menu" id="menu">
+        
+            
+        
+        
+        
+        
+            
+                <li class="menu-item"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" class="icon home"><path d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg><span class="menu-item-name">首页</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/categories/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon th"><path d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z"/></svg><span class="menu-item-name">分类</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/tags/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" class="icon tags"><path d="M497.941 225.941L286.059 14.059A48 48 0 0 0 252.118 0H48C21.49 0 0 21.49 0 48v204.118a48 48 0 0 0 14.059 33.941l211.882 211.882c18.744 18.745 49.136 18.746 67.882 0l204.118-204.118c18.745-18.745 18.745-49.137 0-67.882zM112 160c-26.51 0-48-21.49-48-48s21.49-48 48-48 48 21.49 48 48-21.49 48-48 48zm513.941 133.823L421.823 497.941c-18.745 18.745-49.137 18.745-67.882 0l-.36-.36L527.64 323.522c16.999-16.999 26.36-39.6 26.36-63.64s-9.362-46.641-26.36-63.64L331.397 0h48.721a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882z"/></svg><span class="menu-item-name">标签</span></a>
+                </li>
+            
+        
+            
+                <li class="menu-item"><a href="/about/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon user-circle"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 96c48.6 0 88 39.4 88 88s-39.4 88-88 88-88-39.4-88-88 39.4-88 88-88zm0 344c-58.7 0-111.3-26.6-146.5-68.2 18.8-35.4 55.6-59.8 98.5-59.8 2.4 0 4.8.4 7.1 1.1 13 4.2 26.6 6.9 40.9 6.9 14.3 0 28-2.7 40.9-6.9 2.3-.7 4.7-1.1 7.1-1.1 42.9 0 79.7 24.4 98.5 59.8C359.3 421.4 306.7 448 248 448z"/></svg><span class="menu-item-name">关于</span></a>
+                </li>
+            
+        
+            
+                
+                    
+                    
+                        <li class="menu-item">
+                            <a id="theme-switcher" href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-light"><path d="M193.2 104.5l48.8-97.5a18 18 0 0128 0l48.8 97.5 103.4 -34.5a18 18 0 0119.8 19.8l-34.5 103.4l97.5 48.8a18 18 0 010 28l-97.5 48.8 34.5 103.4a18 18 0 01-19.8 19.8l-103.4-34.5-48.8 97.5a18 18 0 01-28 0l-48.8-97.5l-103.4 34.5a18 18 0 01-19.8-19.8l34.5-103.4-97.5-48.8a18 18 0 010-28l97.5-48.8-34.5-103.4a18 18 0 0119.8-19.8zM256 128a128 128 0 10.01 0M256 160a96 96 0 10.01 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon theme-icon-dark"><path d="M27 412a256 256 0 10154-407a11.5 11.5 0 00-5 20a201.5 201.5 0 01-134 374a11.5 11.5 0 00-15 13"/></svg></a>
+                        </li>
+                    
+                
+            
+        
+            
+                
+            
+        
+            
+                
+            
+        
+    </ul>
+</nav>
+
+                    
+                </div>
+            </div>
+            
+    <input type="checkbox" id="nav-toggle" aria-hidden="true" />
+    <label for="nav-toggle" class="nav-toggle"></label>
+    <label for="nav-toggle" class="nav-curtain"></label>
+
+
+        
+    </header>
+
+
+
+
+            
+            
+    <main class="main single" id="main">
+    <div class="main-inner">
+
+        
+
+        <article class="content post h-entry" data-align="justify" data-type="blog" data-toc-num="true">
+
+            <h1 class="post-title p-name">File文件操作</h1>
+
+            
+
+            
+                <div class="post-description p-summary">首先，file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。</div>
+                
+            
+
+            
+                
+
+<div class="post-meta">
+    
+        
+        <time datetime="2022-08-01T21:29:20&#43;02:00" class="post-meta-item published dt-published"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>&nbsp;2022.8.1</time>
+    
+    
+        
+        <time datetime="2022-08-04T11:48:42&#43;08:00" class="post-meta-item modified dt-updated"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon post-meta-icon"><path d="M400 64h-48V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H160V12c0-6.627-5.373-12-12-12h-40c-6.627 0-12 5.373-12 12v52H48C21.49 64 0 85.49 0 112v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm-6 400H54a6 6 0 0 1-6-6V160h352v298a6 6 0 0 1-6 6zm-52.849-200.65L198.842 404.519c-4.705 4.667-12.303 4.637-16.971-.068l-75.091-75.699c-4.667-4.705-4.637-12.303.068-16.971l22.719-22.536c4.705-4.667 12.303-4.637 16.97.069l44.104 44.461 111.072-110.181c4.705-4.667 12.303-4.637 16.971.068l22.536 22.718c4.667 4.705 4.636 12.303-.069 16.97z"/></svg>&nbsp;2022.8.4</time>
+    
+    
+    
+        
+        
+        
+            
+                <span class="post-meta-item category"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M464 128H272l-54.63-54.63c-6-6-14.14-9.37-22.63-9.37H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V176c0-26.51-21.49-48-48-48zm0 272H48V112h140.12l54.63 54.63c6 6 14.14 9.37 22.63 9.37H464v224z"/></svg>&nbsp;<a href="/categories/golang/" class="category-link p-category">golang</a>/<a href="/categories/%E5%B7%A5%E5%85%B7/" class="category-link p-category">工具</a>/<a href="/categories/%E7%BC%96%E7%A8%8B/" class="category-link p-category">编程</a></span>
+            
+        
+    
+    
+        
+        <span class="post-meta-item wordcount"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M497.9 142.1l-46.1 46.1c-4.7 4.7-12.3 4.7-17 0l-111-111c-4.7-4.7-4.7-12.3 0-17l46.1-46.1c18.7-18.7 49.1-18.7 67.9 0l60.1 60.1c18.8 18.7 18.8 49.1 0 67.9zM284.2 99.8L21.6 362.4.4 483.9c-2.9 16.4 11.4 30.6 27.8 27.8l121.5-21.3 262.6-262.6c4.7-4.7 4.7-12.3 0-17l-111-111c-4.8-4.7-12.4-4.7-17.1 0zM124.1 339.9c-5.5-5.5-5.5-14.3 0-19.8l154-154c5.5-5.5 14.3-5.5 19.8 0s5.5 14.3 0 19.8l-154 154c-5.5 5.5-14.3 5.5-19.8 0zM88 424h48v36.3l-64.5 11.3-31.1-31.1L51.7 376H88v48z"/></svg>&nbsp;13109</span>
+    
+    
+        
+        <span class="post-meta-item reading-time"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon post-meta-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>&nbsp;27&nbsp;分钟</span>
+    
+    
+    
+</div>
+
+            
+
+            <nav class="contents" style="position: fixed;top:2%;right:2%;width:350px;
+height:90%;
+overflow: scroll;
+">
+  <ol class="toc">
+    <li><a id="contents:1fileinfo接口" href="#1fileinfo接口">1、FileInfo接口</a></li>
+    <li><a id="contents:2权限" href="#2权限">2、权限</a></li>
+    <li><a id="contents:3打开模式" href="#3打开模式">3、打开模式</a></li>
+    <li><a id="contents:4file操作" href="#4file操作">4、File操作</a></li>
+    <li><a id="contents:5示例代码" href="#5示例代码">5、示例代码</a></li>
+  </ol>
+
+  <ol>
+    <li><a id="contents:1io包" href="#1io包">1、io包</a></li>
+    <li><a id="contents:2文件读写" href="#2文件读写">2、文件读写</a></li>
+    <li><a id="contents:3实例代码" href="#3实例代码">3、实例代码</a></li>
+  </ol>
+
+  <ol>
+    <li><a id="contents:1方法一io包下的read和write方法实现" href="#1方法一io包下的read和write方法实现">1、方法一：io包下的Read()和Write()方法实现</a></li>
+    <li><a id="contents:2方法二io包下的copy方法实现" href="#2方法二io包下的copy方法实现">2、方法二：io包下的Copy()方法实现</a>
+      <ol>
+        <li><a id="contents:扩展内容" href="#扩展内容">扩展内容：</a></li>
+      </ol>
+    </li>
+    <li><a id="contents:3方法三ioutil包" href="#3方法三ioutil包">3、方法三：ioutil包</a></li>
+    <li><a id="contents:4总结" href="#4总结">4、总结</a></li>
+  </ol>
+
+  <ol>
+    <li><a id="contents:1seeker接口" href="#1seeker接口">1、Seeker接口</a></li>
+    <li><a id="contents:2断点续传" href="#2断点续传">2、断点续传</a></li>
+  </ol>
+
+  <ol>
+    <li><a id="contents:1bufio包原理" href="#1bufio包原理">1、bufio包原理</a></li>
+    <li><a id="contents:2bufio包" href="#2bufio包">2、bufio包</a></li>
+    <li><a id="contents:3实例代码-1" href="#3实例代码-1">3、实例代码</a></li>
+  </ol>
+
+  <ol>
+    <li><a id="contents:1ioutil包的方法" href="#1ioutil包的方法">1、ioutil包的方法</a></li>
+    <li><a id="contents:2示例代码" href="#2示例代码">2、示例代码：</a></li>
+  </ol>
+</nav><div class="post-body e-content">
+                <h1 id="一file文件操作"><a href="#一file文件操作" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:一file文件操作" class="headings">一、File文件操作</a></h1>
+<blockquote>
+<p>@author：韩茹
+版权所有：北京千锋互联科技有限公司</p>
+</blockquote>
+<p>首先，file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。</p>
+<h2 id="1fileinfo接口"><a href="#1fileinfo接口" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1fileinfo接口" class="headings">1、FileInfo接口</a></h2>
+<p>FileInfo接口中定义了File信息相关的方法。</p>
+<pre><code class="language-go">type FileInfo interface {
+	Name() string       // base name of the file 文件名.扩展名 aa.txt
+	Size() int64        // 文件大小，字节数 12540
+	Mode() FileMode     // 文件权限 -rw-rw-rw-
+	ModTime() time.Time // 修改时间 2018-04-13 16:30:53 +0800 CST
+	IsDir() bool        // 是否文件夹
+	Sys() interface{}   // 基础数据源接口(can return nil)
+}
+</code></pre>
+<h2 id="2权限"><a href="#2权限" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2权限" class="headings">2、权限</a></h2>
+<p>至于操作权限perm，除非创建文件时才需要指定，不需要创建新文件时可以将其设定为０。虽然go语言给perm权限设定了很多的常量，但是习惯上也可以直接使用数字，如0666(具体含义和Unix系统的一致)。</p>
+<p>权限控制：</p>
+<pre><code class="language-go">linux 下有2种文件权限表示方式，即“符号表示”和“八进制表示”。
+
+（1）符号表示方式:
+-      ---         ---        ---
+type   owner       group      others
+文件的权限是这样子分配的 读 写 可执行 分别对应的是 r w x 如果没有那一个权限，用 - 代替
+(-文件 d目录 |连接符号)
+例如：-rwxr-xr-x
+
+
+（2）八进制表示方式：	
+r ——&gt; 004
+w ——&gt; 002
+x ——&gt; 001
+- ——&gt; 000
+
+0755
+0777
+0555
+0444
+0666
+</code></pre>
+<h2 id="3打开模式"><a href="#3打开模式" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:3打开模式" class="headings">3、打开模式</a></h2>
+<p>文件打开模式：</p>
+<pre><code class="language-go">const (
+    O_RDONLY int = syscall.O_RDONLY // 只读模式打开文件
+    O_WRONLY int = syscall.O_WRONLY // 只写模式打开文件
+    O_RDWR   int = syscall.O_RDWR   // 读写模式打开文件
+    O_APPEND int = syscall.O_APPEND // 写操作时将数据附加到文件尾部
+    O_CREATE int = syscall.O_CREAT  // 如果不存在将创建一个新文件
+    O_EXCL   int = syscall.O_EXCL   // 和O_CREATE配合使用，文件必须不存在
+    O_SYNC   int = syscall.O_SYNC   // 打开文件用于同步I/O
+    O_TRUNC  int = syscall.O_TRUNC  // 如果可能，打开时清空文件
+)
+</code></pre>
+<h2 id="4file操作"><a href="#4file操作" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:4file操作" class="headings">4、File操作</a></h2>
+<pre><code class="language-go">type File
+//File代表一个打开的文件对象。
+
+func Create(name string) (file *File, err error)
+//Create采用模式0666（任何人都可读写，不可执行）创建一个名为name的文件，如果文件已存在会截断它（为空文件）。如果成功，返回的文件对象可用于I/O；对应的文件描述符具有O_RDWR模式。如果出错，错误底层类型是*PathError。
+
+func Open(name string) (file *File, err error)
+//Open打开一个文件用于读取。如果操作成功，返回的文件对象的方法可用于读取数据；对应的文件描述符具有O_RDONLY模式。如果出错，错误底层类型是*PathError。
+
+func OpenFile(name string, flag int, perm FileMode) (file *File, err error)
+//OpenFile是一个更一般性的文件打开函数，大多数调用者都应用Open或Create代替本函数。它会使用指定的选项（如O_RDONLY等）、指定的模式（如0666等）打开指定名称的文件。如果操作成功，返回的文件对象可用于I/O。如果出错，错误底层类型是*PathError。
+
+func NewFile(fd uintptr, name string) *File
+//NewFile使用给出的Unix文件描述符和名称创建一个文件。
+
+func Pipe() (r *File, w *File, err error)
+//Pipe返回一对关联的文件对象。从r的读取将返回写入w的数据。本函数会返回两个文件对象和可能的错误。
+
+func (f *File) Name() string
+//Name方法返回（提供给Open/Create等方法的）文件名称。
+
+func (f *File) Stat() (fi FileInfo, err error)
+//Stat返回描述文件f的FileInfo类型值。如果出错，错误底层类型是*PathError。
+
+func (f *File) Fd() uintptr
+//Fd返回与文件f对应的整数类型的Unix文件描述符。
+
+func (f *File) Chdir() error
+//Chdir将当前工作目录修改为f，f必须是一个目录。如果出错，错误底层类型是*PathError。
+
+func (f *File) Chmod(mode FileMode) error
+//Chmod修改文件的模式。如果出错，错误底层类型是*PathError。
+
+func (f *File) Chown(uid, gid int) error
+//Chown修改文件的用户ID和组ID。如果出错，错误底层类型是*PathError。
+
+func (f *File) Close() error
+//Close关闭文件f，使文件不能用于读写。它返回可能出现的错误。
+
+
+func (f *File) Readdir(n int) (fi []FileInfo, err error)
+//Readdir读取目录f的内容，返回一个有n个成员的[]FileInfo，这些FileInfo是被Lstat返回的，采用目录顺序。对本函数的下一次调用会返回上一次调用剩余未读取的内容的信息。如果n&gt;0，Readdir函数会返回一个最多n个成员的切片。这时，如果Readdir返回一个空切片，它会返回一个非nil的错误说明原因。如果到达了目录f的结尾，返回值err会是io.EOF。如果n&lt;=0，Readdir函数返回目录中剩余所有文件对象的FileInfo构成的切片。此时，如果Readdir调用成功（读取所有内容直到结尾），它会返回该切片和nil的错误值。如果在到达结尾前遇到错误，会返回之前成功读取的FileInfo构成的切片和该错误。
+
+func (f *File) Readdirnames(n int) (names []string, err error)
+//Readdir读取目录f的内容，返回一个有n个成员的[]string，切片成员为目录中文件对象的名字，采用目录顺序。对本函数的下一次调用会返回上一次调用剩余未读取的内容的信息。如果n&gt;0，Readdir函数会返回一个最多n个成员的切片。这时，如果Readdir返回一个空切片，它会返回一个非nil的错误说明原因。如果到达了目录f的结尾，返回值err会是io.EOF。如果n&lt;=0，Readdir函数返回目录中剩余所有文件对象的名字构成的切片。此时，如果Readdir调用成功（读取所有内容直到结尾），它会返回该切片和nil的错误值。如果在到达结尾前遇到错误，会返回之前成功读取的名字构成的切片和该错误。
+
+func (f *File) Truncate(size int64) error
+//Truncate改变文件的大小，它不会改变I/O的当前位置。 如果截断文件，多出的部分就会被丢弃。如果出错，错误底层类型是*PathError。
+
+
+
+</code></pre>
+<h2 id="5示例代码"><a href="#5示例代码" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:5示例代码" class="headings">5、示例代码</a></h2>
+<p>文件信息：FileInfo</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+)
+
+func main() {
+	/*
+	FileInfo：文件信息
+		interface
+			Name()，文件名
+			Size()，文件大小，字节为单位
+			IsDir()，是否是目录
+			ModTime()，修改时间
+			Mode()，权限
+
+	 */
+	fileInfo,err :=  os.Stat(&quot;/Users/ruby/Documents/pro/a/aa.txt&quot;)
+	if err != nil{
+		fmt.Println(&quot;err :&quot;,err)
+		return
+	}
+	fmt.Printf(&quot;%T\n&quot;,fileInfo)
+	//文件名
+	fmt.Println(fileInfo.Name())
+	//文件大小
+	fmt.Println(fileInfo.Size())
+	//是否是目录
+	fmt.Println(fileInfo.IsDir()) //IsDirectory
+	//修改时间
+	fmt.Println(fileInfo.ModTime())
+	//权限
+	fmt.Println(fileInfo.Mode()) //-rw-r--r--
+}
+
+</code></pre>
+<p>运行结果：</p>
+<p><img src="/img/png/fileyunxing1.png" alt="fileyunxing1"></p>
+<p>文件操作实例：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;fmt&quot;
+	&quot;path/filepath&quot;
+	&quot;path&quot;
+	&quot;os&quot;
+)
+
+func main() {
+	/*
+	文件操作：
+	1.路径：
+		相对路径：relative
+			ab.txt
+			相对于当前工程
+		绝对路径：absolute
+			/Users/ruby/Documents/pro/a/aa.txt
+
+		.当前目录
+		..上一层
+	2.创建文件夹，如果文件夹存在，创建失败
+		os.MkDir()，创建一层
+		os.MkDirAll()，可以创建多层
+
+	3.创建文件，Create采用模式0666（任何人都可读写，不可执行）创建一个名为name的文件，如果文件已存在会截断它（为空文件）
+		os.Create()，创建文件
+
+	4.打开文件：让当前的程序，和指定的文件之间建立一个连接
+		os.Open(filename)
+		os.OpenFile(filename,mode,perm)
+
+	5.关闭文件：程序和文件之间的链接断开。
+		file.Close()
+
+	5.删除文件或目录：慎用，慎用，再慎用
+		os.Remove()，删除文件和空目录
+		os.RemoveAll()，删除所有
+	 */
+	 //1.路径
+	 fileName1:=&quot;/Users/ruby/Documents/pro/a/aa.txt&quot;
+	 fileName2:=&quot;bb.txt&quot;
+	 fmt.Println(filepath.IsAbs(fileName1)) //true
+	 fmt.Println(filepath.IsAbs(fileName2)) //false
+	 fmt.Println(filepath.Abs(fileName1))
+	 fmt.Println(filepath.Abs(fileName2)) // /Users/ruby/go/src/l_file/bb.txt
+
+	 fmt.Println(&quot;获取父目录：&quot;,path.Join(fileName1,&quot;..&quot;))
+
+	 //2.创建目录
+	 //err := os.Mkdir(&quot;/Users/ruby/Documents/pro/a/bb&quot;,os.ModePerm)
+	 //if err != nil{
+	 //	fmt.Println(&quot;err:&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(&quot;文件夹创建成功。。&quot;)
+	 //err :=os.MkdirAll(&quot;/Users/ruby/Documents/pro/a/cc/dd/ee&quot;,os.ModePerm)
+	 //if err != nil{
+	 //	fmt.Println(&quot;err:&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(&quot;多层文件夹创建成功&quot;)
+
+	 //3.创建文件:Create采用模式0666（任何人都可读写，不可执行）创建一个名为name的文件，如果文件已存在会截断它（为空文件）
+	 //file1,err :=os.Create(&quot;/Users/ruby/Documents/pro/a/ab.txt&quot;)
+	 //if err != nil{
+	 //	fmt.Println(&quot;err：&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(file1)
+
+	 //file2,err := os.Create(fileName2)//创建相对路径的文件，是以当前工程为参照的
+	 //if err != nil{
+	 //	fmt.Println(&quot;err :&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(file2)
+
+	 //4.打开文件：
+	 //file3 ,err := os.Open(fileName1) //只读的
+	 //if err != nil{
+	 //	fmt.Println(&quot;err:&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(file3)
+	/*
+	第一个参数：文件名称
+	第二个参数：文件的打开方式
+		const (
+	// Exactly one of O_RDONLY, O_WRONLY, or O_RDWR must be specified.
+		O_RDONLY int = syscall.O_RDONLY // open the file read-only.
+		O_WRONLY int = syscall.O_WRONLY // open the file write-only.
+		O_RDWR   int = syscall.O_RDWR   // open the file read-write.
+		// The remaining values may be or'ed in to control behavior.
+		O_APPEND int = syscall.O_APPEND // append data to the file when writing.
+		O_CREATE int = syscall.O_CREAT  // create a new file if none exists.
+		O_EXCL   int = syscall.O_EXCL   // used with O_CREATE, file must not exist.
+		O_SYNC   int = syscall.O_SYNC   // open for synchronous I/O.
+		O_TRUNC  int = syscall.O_TRUNC  // truncate regular writable file when opened.
+	)
+	第三个参数：文件的权限：文件不存在创建文件，需要指定权限
+	 */
+	 //file4,err := os.OpenFile(fileName1,os.O_RDONLY|os.O_WRONLY,os.ModePerm)
+	 //if err != nil{
+	 //	fmt.Println(&quot;err:&quot;,err)
+	 //	return
+	 //}
+	 //fmt.Println(file4)
+
+	 //5关闭文件，
+	 //file4.Close()
+
+	 //6.删除文件或文件夹：
+	 //删除文件
+	//err :=  os.Remove(&quot;/Users/ruby/Documents/pro/a/aa.txt&quot;)
+	//if err != nil{
+	//	fmt.Println(&quot;err:&quot;,err)
+	//	return
+	//}
+	//fmt.Println(&quot;删除文件成功。。&quot;)
+	//删除目录
+	err :=  os.RemoveAll(&quot;/Users/ruby/Documents/pro/a/cc&quot;)
+	if err != nil{
+		fmt.Println(&quot;err:&quot;,err)
+		return
+	}
+	fmt.Println(&quot;删除目录成功。。&quot;)
+}
+
+</code></pre>
+<h1 id="二io操作"><a href="#二io操作" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:二io操作" class="headings">二、I/O操作</a></h1>
+<p>I/O操作也叫输入输出操作。其中I是指Input，O是指Output，用于读或者写数据的，有些语言中也叫流操作，是指数据通信的通道。</p>
+<p>Golang 标准库对 IO 的抽象非常精巧，各个组件可以随意组合，可以作为接口设计的典范。</p>
+<h2 id="1io包"><a href="#1io包" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1io包" class="headings">1、io包</a></h2>
+<p>io包中提供I/O原始操作的一系列接口。它主要包装了一些已有的实现，如 os 包中的那些，并将这些抽象成为实用性的功能和一些其他相关的接口。</p>
+<p>由于这些接口和原始的操作以不同的实现包装了低级操作，客户不应假定它们对于并行执行是安全的。</p>
+<p>在io包中最重要的是两个接口：Reader和Writer接口，首先来介绍这两个接口．</p>
+<p>Reader接口的定义，Read()方法用于读取数据。</p>
+<pre><code class="language-go">type Reader interface {
+        Read(p []byte) (n int, err error)
+}
+</code></pre>
+<pre><code>Read 将 len(p) 个字节读取到 p 中。它返回读取的字节数 n（0 &lt;= n &lt;= len(p)）以及任何遇到的错误。即使 Read 返回的 n &lt; len(p)，它也会在调用过程中使用 p的全部作为暂存空间。若一些数据可用但不到 len(p) 个字节，Read 会照例返回可用的东西，而不是等待更多。
+
+当 Read 在成功读取 n &gt; 0 个字节后遇到一个错误或 EOF 情况，它就会返回读取的字节数。它会从相同的调用中返回（非nil的）错误或从随后的调用中返回错误（和 n == 0）。这种一般情况的一个例子就是 Reader 在输入流结束时会返回一个非零的字节数，可能的返回不是 err == EOF 就是 err == nil。无论如何，下一个 Read 都应当返回 0, EOF。
+
+调用者应当总在考虑到错误 err 前处理 n &gt; 0 的字节。这样做可以在读取一些字节，以及允许的 EOF 行为后正确地处理I/O错误。
+
+Read 的实现会阻止返回零字节的计数和一个 nil 错误，调用者应将这种情况视作空操作。
+</code></pre>
+<p>Writer接口的定义，Write()方法用于写出数据。</p>
+<pre><code class="language-go">type Writer interface {
+        Write(p []byte) (n int, err error)
+}
+</code></pre>
+<pre><code>Write 将 len(p) 个字节从 p 中写入到基本数据流中。它返回从 p 中被写入的字节数n（0 &lt;= n &lt;= len(p)）以及任何遇到的引起写入提前停止的错误。若 Write 返回的n &lt; len(p)，它就必须返回一个非nil的错误。Write 不能修改此切片的数据，即便它是临时的。
+</code></pre>
+<p>Seeker接口的定义，封装了基本的 Seek 方法。</p>
+<pre><code class="language-go">type Seeker interface {
+        Seek(offset int64, whence int) (int64, error)
+}
+</code></pre>
+<pre><code>Seeker 用来移动数据的读写指针
+Seek 设置下一次读写操作的指针位置，每次的读写操作都是从指针位置开始的
+whence 的含义：
+	如果 whence 为 0：表示从数据的开头开始移动指针
+	如果 whence 为 1：表示从数据的当前指针位置开始移动指针
+	如果 whence 为 2：表示从数据的尾部开始移动指针
+offset 是指针移动的偏移量
+	返回移动后的指针位置和移动过程中遇到的任何错误
+</code></pre>
+<p>ReaderFrom接口的定义，封装了基本的 ReadFrom 方法。</p>
+<pre><code class="language-go">type ReaderFrom interface {
+        ReadFrom(r Reader) (n int64, err error)
+}
+</code></pre>
+<pre><code>ReadFrom 从 r 中读取数据到对象的数据流中
+	直到 r 返回 EOF 或 r 出现读取错误为止
+	返回值 n 是读取的字节数
+	返回值 err 就是 r 的返回值 err
+</code></pre>
+<p>WriterTo接口的定义，封装了基本的 WriteTo 方法。</p>
+<pre><code class="language-go">type WriterTo interface {
+        WriteTo(w Writer) (n int64, err error)
+}
+</code></pre>
+<pre><code>WriterTo 将对象的数据流写入到 w 中
+	直到对象的数据流全部写入完毕或遇到写入错误为止
+	返回值 n 是写入的字节数
+	返回值 err 就是 w 的返回值 err
+</code></pre>
+<p>定义ReaderAt接口，ReaderAt 接口封装了基本的 ReadAt 方法</p>
+<pre><code class="language-go">type ReaderAt interface {
+        ReadAt(p []byte, off int64) (n int, err error)
+}
+</code></pre>
+<pre><code>ReadAt 从对象数据流的 off 处读出数据到 p 中
+	忽略数据的读写指针，从数据的起始位置偏移 off 处开始读取
+	如果对象的数据流只有部分可用，不足以填满 p
+	则 ReadAt 将等待所有数据可用之后，继续向 p 中写入
+	直到将 p 填满后再返回
+	在这点上 ReadAt 要比 Read 更严格
+	返回读取的字节数 n 和读取时遇到的错误
+	如果 n &lt; len(p)，则需要返回一个 err 值来说明
+	为什么没有将 p 填满（比如 EOF）
+	如果 n = len(p)，而且对象的数据没有全部读完，则
+	err 将返回 nil
+	如果 n = len(p)，而且对象的数据刚好全部读完，则
+	err 将返回 EOF 或者 nil（不确定）
+</code></pre>
+<p>定义WriterAt接口，WriterAt 接口封装了基本的 WriteAt 方法</p>
+<pre><code class="language-go">type WriterAt interface {
+        WriteAt(p []byte, off int64) (n int, err error)
+}
+</code></pre>
+<pre><code>WriteAt 将 p 中的数据写入到对象数据流的 off 处
+	忽略数据的读写指针，从数据的起始位置偏移 off 处开始写入
+	返回写入的字节数和写入时遇到的错误
+	如果 n &lt; len(p)，则必须返回一个 err 值来说明
+	为什么没有将 p 完全写入
+</code></pre>
+<p>其他。。。</p>
+<h2 id="2文件读写"><a href="#2文件读写" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2文件读写" class="headings">2、文件读写</a></h2>
+<p>file类是在os包中的，封装了底层的文件描述符和相关信息，同时封装了Read和Write的实现。</p>
+<pre><code class="language-go">
+func (f *File) Read(b []byte) (n int, err error)
+//Read方法从f中读取最多len(b)字节数据并写入b。它返回读取的字节数和可能遇到的任何错误。文件终止标志是读取0个字节且返回值err为io.EOF。
+
+func (f *File) ReadAt(b []byte, off int64) (n int, err error)
+//ReadAt从指定的位置（相对于文件开始位置）读取len(b)字节数据并写入b。它返回读取的字节数和可能遇到的任何错误。当n&lt;len(b)时，本方法总是会返回错误；如果是因为到达文件结尾，返回值err会是io.EOF。
+
+func (f *File) Write(b []byte) (n int, err error)
+//Write向文件中写入len(b)字节数据。它返回写入的字节数和可能遇到的任何错误。如果返回值n!=len(b)，本方法会返回一个非nil的错误。
+
+func (f *File) WriteString(s string) (ret int, err error)
+//WriteString类似Write，但接受一个字符串参数。
+
+func (f *File) WriteAt(b []byte, off int64) (n int, err error)
+//WriteAt在指定的位置（相对于文件开始位置）写入len(b)字节数据。它返回写入的字节数和可能遇到的任何错误。如果返回值n!=len(b)，本方法会返回一个非nil的错误。
+
+func (f *File) Seek(offset int64, whence int) (ret int64, err error)
+//Seek设置下一次读/写的位置。offset为相对偏移量，而whence决定相对位置：0为相对文件开头，1为相对当前位置，2为相对文件结尾。它返回新的偏移量（相对开头）和可能的错误。
+
+func (f *File) Sync() (err error)
+//Sync递交文件的当前内容进行稳定的存储。一般来说，这表示将文件系统的最近写入的数据在内存中的拷贝刷新到硬盘中稳定保存。
+
+
+</code></pre>
+<h2 id="3实例代码"><a href="#3实例代码" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:3实例代码" class="headings">3、实例代码</a></h2>
+<p>读取文件中的数据：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+	&quot;io&quot;
+)
+
+func main() {
+	/*
+	读取数据：
+		Reader接口：
+			Read(p []byte)(n int, error)
+	 */
+	 //读取本地aa.txt文件中的数据
+	 //step1：打开文件
+	 fileName := &quot;/Users/ruby/Documents/pro/a/aa.txt&quot;
+	 file,err := os.Open(fileName)
+	 if err != nil{
+	 	fmt.Println(&quot;err:&quot;,err)
+	 	return
+	 }
+	 //step3：关闭文件
+	 defer file.Close()
+
+	 //step2：读取数据
+	 bs := make([]byte,4,4)
+	 /*
+	 //第一次读取
+	 n,err :=file.Read(bs)
+	 fmt.Println(err) //&lt;nil&gt;
+	 fmt.Println(n) //4
+	 fmt.Println(bs) //[97 98 99 100]
+	fmt.Println(string(bs)) //abcd
+
+	//第二次读取
+	n,err = file.Read(bs)
+	fmt.Println(err)//&lt;nil&gt;
+	fmt.Println(n)//4
+	fmt.Println(bs) //[101 102 103 104]
+	fmt.Println(string(bs)) //efgh
+
+	//第三次读取
+	n,err = file.Read(bs)
+	fmt.Println(err) //&lt;nil&gt;
+	fmt.Println(n) //2
+	fmt.Println(bs) //[105 106 103 104]
+	fmt.Println(string(bs)) //ijgh
+
+	//第四次读取
+	n,err = file.Read(bs)
+	fmt.Println(err) //EOF
+	fmt.Println(n) //0
+	 */
+	 n := -1
+	 for{
+	 	n,err = file.Read(bs)
+	 	if n == 0 || err == io.EOF{
+	 		fmt.Println(&quot;读取到了文件的末尾，结束读取操作。。&quot;)
+	 		break
+		}
+	 	fmt.Println(string(bs[:n]))
+	 }
+}
+
+</code></pre>
+<p>写出数据到本地文件：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+	&quot;log&quot;
+)
+
+func main() {
+	/*
+	写出数据：
+	 */
+
+	 fileName := &quot;/Users/ruby/Documents/pro/a/ab.txt&quot;
+	//step1：打开文件
+	//step2：写出数据
+	//step3：关闭文件
+	//file,err := os.Open(fileName)
+	file,err := os.OpenFile(fileName,os.O_CREATE|os.O_WRONLY|os.O_APPEND,os.ModePerm)
+	if err != nil{
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+
+	//写出数据
+	//bs :=[]byte{65,66,67,68,69,70}//A,B,C,D,E,F
+	bs :=[] byte{97,98,99,100} //a,b,c,d
+	//n,err := file.Write(bs)
+	n,err := file.Write(bs[:2])
+	fmt.Println(n)
+	HandleErr(err)
+	file.WriteString(&quot;\n&quot;)
+
+	//直接写出字符串
+	n,err = file.WriteString(&quot;HelloWorld&quot;)
+	fmt.Println(n)
+	HandleErr(err)
+
+	file.WriteString(&quot;\n&quot;)
+	n,err =file.Write([]byte(&quot;today&quot;))
+	fmt.Println(n)
+	HandleErr(err)
+
+}
+
+func HandleErr(err error){
+	if err != nil{
+		log.Fatal(err)
+	}
+}
+
+</code></pre>
+<h1 id="三文件复制"><a href="#三文件复制" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:三文件复制" class="headings">三、文件复制</a></h1>
+<p>在io包中主要是操作流的一些方法，今天主要学习一下copy。就是把一个文件复制到另一个目录下。</p>
+<p>它的原理就是通过程序，从源文件读取文件中的数据，在写出到目标文件里。</p>
+<p><img src="/img/png/copyfile.png" alt="copyfile"></p>
+<h2 id="1方法一io包下的read和write方法实现"><a href="#1方法一io包下的read和write方法实现" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1方法一io包下的read和write方法实现" class="headings">1、方法一：io包下的Read()和Write()方法实现</a></h2>
+<p>我们可以通过io包下的Read()和Write()方法，边读边写，就能够实现文件的复制。这个方法是按块读取文件，块的大小也会影响到程序的性能。</p>
+<pre><code class="language-go">}
+/*
+该函数的功能：实现文件的拷贝，返回值是拷贝的总数量(字节),错误
+ */
+func copyFile1(srcFile,destFile string)(int,error){
+	file1,err:=os.Open(srcFile)
+	if err != nil{
+		return 0,err
+	}
+	file2,err:=os.OpenFile(destFile,os.O_WRONLY|os.O_CREATE,os.ModePerm)
+	if err !=nil{
+		return 0,err
+	}
+	defer file1.Close()
+	defer file2.Close()
+	//拷贝数据
+	bs := make([]byte,1024,1024)
+	n :=-1//读取的数据量
+	total := 0
+	for {
+		n,err = file1.Read(bs)
+		if err == io.EOF || n == 0{
+			fmt.Println(&quot;拷贝完毕。。&quot;)
+			break
+		}else if err !=nil{
+			fmt.Println(&quot;报错了。。。&quot;)
+			return total,err
+		}
+		total += n
+		file2.Write(bs[:n])
+	}
+	return total,nil
+
+}
+
+</code></pre>
+<h2 id="2方法二io包下的copy方法实现"><a href="#2方法二io包下的copy方法实现" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2方法二io包下的copy方法实现" class="headings">2、方法二：io包下的Copy()方法实现</a></h2>
+<p>我们也可以直接使用io包下的Copy()方法。</p>
+<p>示例代码如下：</p>
+<pre><code class="language-go">func copyFile2(srcFile, destFile string)(int64,error){
+	file1,err:=os.Open(srcFile)
+	if err != nil{
+		return 0,err
+	}
+	file2,err:=os.OpenFile(destFile,os.O_WRONLY|os.O_CREATE,os.ModePerm)
+	if err !=nil{
+		return 0,err
+	}
+	defer file1.Close()
+	defer file2.Close()
+
+	return io.Copy(file2,file1)
+}
+</code></pre>
+<h3 id="扩展内容"><a href="#扩展内容" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:扩展内容" class="headings">扩展内容：</a></h3>
+<p>在io包（golang 版本 1.12）中，不止提供了Copy()方法，还有另外2个公开的copy方法：CopyN()，CopyBuffer()。</p>
+<pre><code class="language-go">Copy（dst,src） 为复制src 全部到 dst 中。
+
+CopyN(dst,src,n) 为复制src 中 n 个字节到 dst。
+
+CopyBuffer（dst,src,buf）为指定一个buf缓存区，以这个大小完全复制。
+
+</code></pre>
+<p>他们的关系如下：</p>
+<p><img src="/img/png/20190316084535903.jpg" alt="20190316084535903"></p>
+<p>(图片来自网络)</p>
+<p>从图可以看出，无论是哪个copy方法最终都是由copyBuffer（）这个私有方法实现的。</p>
+<pre><code class="language-go">func copyBuffer(dst Writer, src Reader, buf []byte) (written int64, err error) {
+	// If the reader has a WriteTo method, use it to do the copy.
+	// Avoids an allocation and a copy.
+	if wt, ok := src.(WriterTo); ok {
+		return wt.WriteTo(dst)
+	}
+	// Similarly, if the writer has a ReadFrom method, use it to do the copy.
+	if rt, ok := dst.(ReaderFrom); ok {
+		return rt.ReadFrom(src)
+	}
+	if buf == nil {
+		size := 32 * 1024
+		if l, ok := src.(*LimitedReader); ok &amp;&amp; int64(size) &gt; l.N {
+			if l.N &lt; 1 {
+				size = 1
+			} else {
+				size = int(l.N)
+			}
+		}
+		buf = make([]byte, size)
+	}
+	for {
+		nr, er := src.Read(buf)
+		if nr &gt; 0 {
+			nw, ew := dst.Write(buf[0:nr])
+			if nw &gt; 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				err = ew
+				break
+			}
+			if nr != nw {
+				err = ErrShortWrite
+				break
+			}
+		}
+		if er != nil {
+			if er != EOF {
+				err = er
+			}
+			break
+		}
+	}
+	return written, err
+}
+</code></pre>
+<p>从这部分代码可以看出，复制主要分为3种。</p>
+<p>1.如果被复制的Reader（src）会尝试能否断言成writerTo，如果可以则直接调用下面的writerTo方法</p>
+<p>2.如果 Writer（dst） 会尝试能否断言成ReadFrom ，如果可以则直接调用下面的readfrom方法</p>
+<p>3.如果都木有实现，则调用底层read实现复制。</p>
+<p>其中，有这么一段代码：</p>
+<pre><code class="language-go">if buf == nil {
+		size := 32 * 1024
+		if l, ok := src.(*LimitedReader); ok &amp;&amp; int64(size) &gt; l.N {
+			if l.N &lt; 1 {
+				size = 1
+			} else {
+				size = int(l.N)
+			}
+		}
+		buf = make([]byte, size)
+	}
+</code></pre>
+<p>这部分主要是实现了对Copy和CopyN的处理。通过上面的调用关系图，我们看出CopyN在调用后，会把Reader转成LimiteReader。</p>
+<p>区别是如果Copy，直接建立一个缓存区默认大小为 32* 1024 的buf，如果是CopyN 会先判断 要复制的字节数，如果小于默认大小，会创建一个等于要复制字节数的buf。</p>
+<h2 id="3方法三ioutil包"><a href="#3方法三ioutil包" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:3方法三ioutil包" class="headings">3、方法三：ioutil包</a></h2>
+<p>第三种方法是使用ioutil包中的 <code>ioutil.WriteFile()</code>和 <code>ioutil.ReadFile()</code>，但由于使用一次性读取文件，再一次性写入文件的方式，所以该方法不适用于大文件，容易内存溢出。</p>
+<p>示例代码：</p>
+<pre><code class="language-go">
+func copyFile3(srcFile, destFile string)(int,error){
+	input, err := ioutil.ReadFile(srcFile)
+	if err != nil {
+		fmt.Println(err)
+		return 0,err
+	}
+
+	err = ioutil.WriteFile(destFile, input, 0644)
+	if err != nil {
+		fmt.Println(&quot;操作失败：&quot;, destFile)
+		fmt.Println(err)
+		return 0,err
+	}
+
+	return len(input),nil
+}
+
+</code></pre>
+<h2 id="4总结"><a href="#4总结" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:4总结" class="headings">4、总结</a></h2>
+<p>最后，我们来测试一下这3种拷贝需要花费时间，拷贝的文件都是一样的一个mp4文件(400M)，
+<img src="/img/png/WX20190702-124039.png" alt="WX20190702-124039"></p>
+<p>代码：</p>
+<pre><code class="language-go">func main() {
+	/*
+	复制文件：
+	 */
+	//srcFile := &quot;/home/ruby/文档/pro/aa.txt&quot;
+	//destFile := &quot;/home/ruby/文档/aa.txt&quot;
+
+	srcFile :=&quot;/Users/ruby/Documents/pro/a/001_小程序入门.mp4&quot;
+	destFile:=&quot;001_小程序入门.mp4&quot;
+	total,err:=copyFile1(srcFile,destFile)
+	fmt.Println(err)
+	fmt.Println(total)
+
+}
+</code></pre>
+<p>第一种：io包下Read()和Write()直接读写：我们自己创建读取数据的切片的大小，直接影响性能。</p>
+<pre><code class="language-go">localhost:l_file ruby$ time go run demo05_copy.go 
+拷贝完毕。。
+&lt;nil&gt;
+401386819
+
+real    0m7.911s
+user    0m2.900s
+sys     0m7.661s
+
+
+</code></pre>
+<p>第二种：io包下Copy()方法：</p>
+<pre><code class="language-go">localhost:l_file ruby$ time go run demo05_copy.go 
+&lt;nil&gt;
+401386819
+
+real    0m1.594s
+user    0m0.533s
+sys     0m1.136s
+
+
+</code></pre>
+<p>第三种：ioutil包</p>
+<pre><code class="language-go">localhost:l_file ruby$ time go run demo05_copy.go 
+&lt;nil&gt;
+401386819
+
+real    0m1.515s
+user    0m0.339s
+sys     0m0.625s
+
+</code></pre>
+<p>运行结果：</p>
+<p><img src="/img/png/WX20190702-124719.png" alt="WX20190702-124719"></p>
+<p>这3种方式，在性能上，不管是还是io.Copy()还是ioutil包，性能都是还不错的。</p>
+<h1 id="四断点续传"><a href="#四断点续传" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:四断点续传" class="headings">四、断点续传</a></h1>
+<h2 id="1seeker接口"><a href="#1seeker接口" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1seeker接口" class="headings">1、Seeker接口</a></h2>
+<p>Seeker是包装基本Seek方法的接口。</p>
+<pre><code class="language-go">type Seeker interface {
+        Seek(offset int64, whence int) (int64, error)
+}
+</code></pre>
+<p>seek(offset,whence),设置指针光标的位置，随机读写文件：</p>
+<pre><code>第一个参数：偏移量
+第二个参数：如何设置			
+
+			0：seekStart表示相对于文件开始，
+			1：seekCurrent表示相对于当前偏移量，
+			2：seek end表示相对于结束。
+</code></pre>
+<pre><code class="language-go">const (
+	SeekStart   = 0 // seek relative to the origin of the file
+	SeekCurrent = 1 // seek relative to the current offset
+	SeekEnd     = 2 // seek relative to the end
+)
+</code></pre>
+<p>示例代码：</p>
+<p>我们要读取本地/Users/ruby/Documents/pro/a 目录下的aa.txt文件，文件中的内容是：abcdefghij这几个字符。</p>
+<p><img src="/img/png/WX20190703-155441.png" alt="WX20190703-155441"></p>
+<p>示例代码：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+	&quot;io&quot;
+)
+
+func main() {
+	/*
+	seek(offset,whence),设置指针光标的位置
+	第一个参数：偏移量
+	第二个参数：如何设置
+		0：seekStart表示相对于文件开始，
+		1：seekCurrent表示相对于当前偏移量，
+		2：seek end表示相对于结束。
+
+
+	const (
+	SeekStart   = 0 // seek relative to the origin of the file
+	SeekCurrent = 1 // seek relative to the current offset
+	SeekEnd     = 2 // seek relative to the end
+)
+
+	随机读取文件：
+		可以设置指针光标的位置
+	 */
+
+	file,_:=os.OpenFile(&quot;/Users/ruby/Documents/pro/a/aa.txt&quot;,os.O_RDWR,0)
+	defer file.Close()
+	bs :=[]byte{0}
+
+	file.Read(bs)
+	fmt.Println(string(bs))
+
+	file.Seek(4,io.SeekStart)
+	file.Read(bs)
+	fmt.Println(string(bs))
+	file.Seek(2,0) //也是SeekStart
+	file.Read(bs)
+	fmt.Println(string(bs))
+
+	file.Seek(3,io.SeekCurrent)
+	file.Read(bs)
+	fmt.Println(string(bs))
+
+	file.Seek(0,io.SeekEnd)
+	file.WriteString(&quot;ABC&quot;)
+}
+
+</code></pre>
+<p>运行结果：</p>
+<p><img src="/img/png/WX20190703-155739.png" alt="WX20190703-155739"></p>
+<p>本地文件：</p>
+<p><img src="/img/png/WX20190703-155821.png" alt="WX20190703-155821"></p>
+<h2 id="2断点续传"><a href="#2断点续传" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2断点续传" class="headings">2、断点续传</a></h2>
+<p>首先思考几个问题
+Q1：如果你要传的文件，比较大，那么是否有方法可以缩短耗时？
+Q2：如果在文件传递过程中，程序因各种原因被迫中断了，那么下次再重启时，文件是否还需要重头开始？
+Q3：传递文件的时候，支持暂停和恢复么？即使这两个操作分布在程序进程被杀前后。</p>
+<p>通过断点续传可以实现，不同的语言有不同的实现方式。我们看看Go语言中，通过Seek()方法如何实现：</p>
+<p>先说一下思路：想实现断点续传，主要就是记住上一次已经传递了多少数据，那我们可以创建一个临时文件，记录已经传递的数据量，当恢复传递的时候，先从临时文件中读取上次已经传递的数据量，然后通过Seek()方法，设置到该读和该写的位置，再继续传递数据。</p>
+<p>示例代码：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;fmt&quot;
+	&quot;os&quot;
+	&quot;strconv&quot;
+	&quot;io&quot;
+)
+
+func main() {
+	/*
+	断点续传：
+		文件传递：文件复制
+			/Users/ruby/Documents/pro/a/guliang.jpeg
+
+		复制到
+			guliang4.jpeg
+
+	思路：
+		边复制，边记录复制的总量
+	 */
+
+	srcFile:=&quot;/Users/ruby/Documents/pro/a/guliang.jpeg&quot;
+	destFile:=&quot;guliang4.jpeg&quot;
+	tempFile:=destFile+&quot;temp.txt&quot;
+	//fmt.Println(tempFile)
+	file1,_:=os.Open(srcFile)
+	file2,_:=os.OpenFile(destFile,os.O_CREATE|os.O_WRONLY,os.ModePerm)
+	file3,_:=os.OpenFile(tempFile,os.O_CREATE|os.O_RDWR,os.ModePerm)
+
+
+	defer file1.Close()
+	defer file2.Close()
+	//1.读取临时文件中的数据，根据seek
+	file3.Seek(0,io.SeekStart)
+	bs:=make([]byte,100,100)
+	n1,err:=file3.Read(bs)
+	fmt.Println(n1)
+	countStr:=string(bs[:n1])
+	fmt.Println(countStr)
+	//count,_:=strconv.Atoi(countStr)
+	count,_:=strconv.ParseInt(countStr,10,64)
+	fmt.Println(count)
+
+	//2. 设置读，写的偏移量
+	file1.Seek(count,0)
+	file2.Seek(count,0)
+	data:=make([]byte,1024,1024)
+	n2:=-1// 读取的数据量
+	n3:=-1//写出的数据量
+	total :=int(count)//读取的总量
+
+	for{
+		//3.读取数据
+		n2,err=file1.Read(data)
+		if err ==io.EOF{
+			fmt.Println(&quot;文件复制完毕。。&quot;)
+			file3.Close()
+			os.Remove(tempFile)
+			break
+		}
+		//将数据写入到目标文件
+		n3,_=file2.Write(data[:n2])
+		total += n3
+		//将复制总量，存储到临时文件中
+		file3.Seek(0,io.SeekStart)
+		file3.WriteString(strconv.Itoa(total))
+
+
+		//假装断电
+		//if total&gt;8000{
+		//	panic(&quot;假装断电了。。。，假装的。。。&quot;)
+		//}
+	}
+
+}
+
+</code></pre>
+<h1 id="五bufio包"><a href="#五bufio包" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:五bufio包" class="headings">五、bufio包</a></h1>
+<blockquote>
+<p>@author：韩茹
+版权所有：北京千锋互联科技有限公司</p>
+</blockquote>
+<p>生命不止，继续Go go go。。</p>
+<p>Go语言在io操作中，还提供了一个bufio的包，使用这个包可以大幅提高文件读写的效率。</p>
+<h2 id="1bufio包原理"><a href="#1bufio包原理" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1bufio包原理" class="headings">1、bufio包原理</a></h2>
+<p>bufio 是通过缓冲来提高效率。</p>
+<p>io操作本身的效率并不低，低的是频繁的访问本地磁盘的文件。所以bufio就提供了缓冲区(分配一块内存)，读和写都先在缓冲区中，最后再读写文件，来降低访问本地磁盘的次数，从而提高效率。</p>
+<p>简单的说就是，把文件读取进缓冲（内存）之后再读取的时候就可以避免文件系统的io 从而提高速度。同理，在进行写操作时，先把文件写入缓冲（内存），然后由缓冲写入文件系统。看完以上解释有人可能会表示困惑了，直接把 内容-&gt;文件 和 内容-&gt;缓冲-&gt;文件相比， 缓冲区好像没有起到作用嘛。其实缓冲区的设计是为了存储多次的写入，最后一口气把缓冲区内容写入文件。</p>
+<p><img src="/img/png/WX20190704-113648.png" alt="WX20190704-113648"></p>
+<p>bufio 封装了io.Reader或io.Writer接口对象，并创建另一个也实现了该接口的对象。</p>
+<p>io.Reader或io.Writer 接口实现read() 和 write() 方法，对于实现这个接口的对象都是可以使用这两个方法的。</p>
+<p>Reader对象</p>
+<p>bufio.Reader 是bufio中对io.Reader 的封装</p>
+<pre><code class="language-go">// Reader implements buffering for an io.Reader object.
+type Reader struct {
+	buf          []byte
+	rd           io.Reader // reader provided by the client
+	r, w         int       // buf read and write positions
+	err          error
+	lastByte     int // last byte read for UnreadByte; -1 means invalid
+	lastRuneSize int // size of last rune read for UnreadRune; -1 means invalid
+}
+</code></pre>
+<p>bufio.Read(p []byte) 相当于读取大小len(p)的内容，思路如下：</p>
+<ol>
+<li>当缓存区有内容的时，将缓存区内容全部填入p并清空缓存区</li>
+<li>当缓存区没有内容的时候且len(p)&gt;len(buf),即要读取的内容比缓存区还要大，直接去文件读取即可</li>
+<li>当缓存区没有内容的时候且len(p)&lt;len(buf),即要读取的内容比缓存区小，缓存区从文件读取内容充满缓存区，并将p填满（此时缓存区有剩余内容）</li>
+<li>以后再次读取时缓存区有内容，将缓存区内容全部填入p并清空缓存区（此时和情况1一样）</li>
+</ol>
+<p>源码：</p>
+<pre><code class="language-go">// Read reads data into p.
+// It returns the number of bytes read into p.
+// The bytes are taken from at most one Read on the underlying Reader,
+// hence n may be less than len(p).
+// To read exactly len(p) bytes, use io.ReadFull(b, p).
+// At EOF, the count will be zero and err will be io.EOF.
+func (b *Reader) Read(p []byte) (n int, err error) {
+	n = len(p)
+	if n == 0 {
+		return 0, b.readErr()
+	}
+	if b.r == b.w {
+		if b.err != nil {
+			return 0, b.readErr()
+		}
+		if len(p) &gt;= len(b.buf) {
+			// Large read, empty buffer.
+			// Read directly into p to avoid copy.
+			n, b.err = b.rd.Read(p)
+			if n &lt; 0 {
+				panic(errNegativeRead)
+			}
+			if n &gt; 0 {
+				b.lastByte = int(p[n-1])
+				b.lastRuneSize = -1
+			}
+			return n, b.readErr()
+		}
+		// One read.
+		// Do not use b.fill, which will loop.
+		b.r = 0
+		b.w = 0
+		n, b.err = b.rd.Read(b.buf)
+		if n &lt; 0 {
+			panic(errNegativeRead)
+		}
+		if n == 0 {
+			return 0, b.readErr()
+		}
+		b.w += n
+	}
+
+	// copy as much as we can
+	n = copy(p, b.buf[b.r:b.w])
+	b.r += n
+	b.lastByte = int(b.buf[b.r-1])
+	b.lastRuneSize = -1
+	return n, nil
+}
+
+</code></pre>
+<p>说明：</p>
+<p>reader内部通过维护一个r, w 即读入和写入的位置索引来判断是否缓存区内容被全部读出。</p>
+<p>Writer对象</p>
+<p>bufio.Writer 是bufio中对io.Writer 的封装</p>
+<pre><code class="language-go">// Writer implements buffering for an io.Writer object.
+// If an error occurs writing to a Writer, no more data will be
+// accepted and all subsequent writes, and Flush, will return the error.
+// After all data has been written, the client should call the
+// Flush method to guarantee all data has been forwarded to
+// the underlying io.Writer.
+type Writer struct {
+	err error
+	buf []byte
+	n   int
+	wr  io.Writer
+}
+</code></pre>
+<p>bufio.Write(p []byte) 的思路如下</p>
+<ol>
+<li>判断buf中可用容量是否可以放下 p</li>
+<li>如果能放下，直接把p拼接到buf后面，即把内容放到缓冲区</li>
+<li>如果缓冲区的可用容量不足以放下，且此时缓冲区是空的，直接把p写入文件即可</li>
+<li>如果缓冲区的可用容量不足以放下，且此时缓冲区有内容，则用p把缓冲区填满，把缓冲区所有内容写入文件，并清空缓冲区</li>
+<li>判断p的剩余内容大小能否放到缓冲区，如果能放下（此时和步骤1情况一样）则把内容放到缓冲区</li>
+<li>如果p的剩余内容依旧大于缓冲区，（注意此时缓冲区是空的，情况和步骤3一样）则把p的剩余内容直接写入文件</li>
+</ol>
+<p>以下是源码</p>
+<pre><code class="language-go">
+// Write writes the contents of p into the buffer.
+// It returns the number of bytes written.
+// If nn &lt; len(p), it also returns an error explaining
+// why the write is short.
+func (b *Writer) Write(p []byte) (nn int, err error) {
+	for len(p) &gt; b.Available() &amp;&amp; b.err == nil {
+		var n int
+		if b.Buffered() == 0 {
+			// Large write, empty buffer.
+			// Write directly from p to avoid copy.
+			n, b.err = b.wr.Write(p)
+		} else {
+			n = copy(b.buf[b.n:], p)
+			b.n += n
+			b.Flush()
+		}
+		nn += n
+		p = p[n:]
+	}
+	if b.err != nil {
+		return nn, b.err
+	}
+	n := copy(b.buf[b.n:], p)
+	b.n += n
+	nn += n
+	return nn, nil
+}
+
+</code></pre>
+<p>说明：</p>
+<p>b.wr 存储的是一个io.writer对象，实现了Write()的接口，所以可以使用b.wr.Write(p) 将p的内容写入文件。</p>
+<p>b.flush() 会将缓存区内容写入文件，当所有写入完成后，因为缓存区会存储内容，所以需要手动flush()到文件。</p>
+<p>b.Available() 为buf可用容量，等于len(buf) - n。</p>
+<p>下图解释的是其中一种情况，即缓存区有内容，剩余p大于缓存区</p>
+<p><img src="/img/png/WX20190704-122357.png" alt="WX20190704-122357"></p>
+<h2 id="2bufio包"><a href="#2bufio包" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2bufio包" class="headings">2、bufio包</a></h2>
+<p>bufio包实现了有缓冲的I/O。它包装一个io.Reader或io.Writer接口对象，创建另一个也实现了该接口，且同时还提供了缓冲和一些文本I/O的帮助函数的对象。</p>
+<p>bufio.Reader：</p>
+<p>bufio.Reader 实现了如下接口：
+io.Reader
+io.WriterTo
+io.ByteScanner
+io.RuneScanner</p>
+<pre><code class="language-go">// NewReaderSize 将 rd 封装成一个带缓存的 bufio.Reader 对象，
+// 缓存大小由 size 指定（如果小于 16 则会被设置为 16）。
+// 如果 rd 的基类型就是有足够缓存的 bufio.Reader 类型，则直接将
+// rd 转换为基类型返回。
+func NewReaderSize(rd io.Reader, size int) *Reader
+
+// NewReader 相当于 NewReaderSize(rd, 4096)
+func NewReader(rd io.Reader) *Reader
+
+// Peek 返回缓存的一个切片，该切片引用缓存中前 n 个字节的数据，
+// 该操作不会将数据读出，只是引用，引用的数据在下一次读取操作之
+// 前是有效的。如果切片长度小于 n，则返回一个错误信息说明原因。
+// 如果 n 大于缓存的总大小，则返回 ErrBufferFull。
+func (b *Reader) Peek(n int) ([]byte, error)
+
+// Read 从 b 中读出数据到 p 中，返回读出的字节数和遇到的错误。
+// 如果缓存不为空，则只能读出缓存中的数据，不会从底层 io.Reader
+// 中提取数据，如果缓存为空，则：
+// 1、len(p) &gt;= 缓存大小，则跳过缓存，直接从底层 io.Reader 中读
+// 出到 p 中。
+// 2、len(p) &lt; 缓存大小，则先将数据从底层 io.Reader 中读取到缓存
+// 中，再从缓存读取到 p 中。
+func (b *Reader) Read(p []byte) (n int, err error)
+
+// Buffered 返回缓存中未读取的数据的长度。
+func (b *Reader) Buffered() int
+
+// ReadBytes 功能同 ReadSlice，只不过返回的是缓存的拷贝。
+func (b *Reader) ReadBytes(delim byte) (line []byte, err error)
+
+// ReadString 功能同 ReadBytes，只不过返回的是字符串。
+func (b *Reader) ReadString(delim byte) (line string, err error)
+
+...
+</code></pre>
+<p>bufio.Writer：</p>
+<p>bufio.Writer 实现了如下接口：
+io.Writer
+io.ReaderFrom
+io.ByteWriter</p>
+<pre><code class="language-go">// NewWriterSize 将 wr 封装成一个带缓存的 bufio.Writer 对象，
+// 缓存大小由 size 指定（如果小于 4096 则会被设置为 4096）。
+// 如果 wr 的基类型就是有足够缓存的 bufio.Writer 类型，则直接将
+// wr 转换为基类型返回。
+func NewWriterSize(wr io.Writer, size int) *Writer
+
+// NewWriter 相当于 NewWriterSize(wr, 4096)
+func NewWriter(wr io.Writer) *Writer
+
+// WriteString 功能同 Write，只不过写入的是字符串
+func (b *Writer) WriteString(s string) (int, error)
+
+// WriteRune 向 b 写入 r 的 UTF-8 编码，返回 r 的编码长度。
+func (b *Writer) WriteRune(r rune) (size int, err error)
+
+// Flush 将缓存中的数据提交到底层的 io.Writer 中
+func (b *Writer) Flush() error
+
+// Available 返回缓存中未使用的空间的长度
+func (b *Writer) Available() int
+
+// Buffered 返回缓存中未提交的数据的长度
+func (b *Writer) Buffered() int
+
+// Reset 将 b 的底层 Writer 重新指定为 w，同时丢弃缓存中的所有数据，复位
+// 所有标记和错误信息。相当于创建了一个新的 bufio.Writer。
+func (b *Writer) Reset(w io.Writer)
+
+...
+</code></pre>
+<h2 id="3实例代码-1"><a href="#3实例代码-1" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:3实例代码-1" class="headings">3、实例代码</a></h2>
+<p>读取数据：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+	&quot;bufio&quot;
+)
+
+func main() {
+	/*
+	bufio:高效io读写
+		buffer缓存
+		io：input/output
+
+	将io包下的Reader，Write对象进行包装，带缓存的包装，提高读写的效率
+
+		ReadBytes()
+		ReadString()
+		ReadLine()
+
+	 */
+
+	 fileName:=&quot;/Users/ruby/Documents/pro/a/english.txt&quot;
+	 file,err := os.Open(fileName)
+	 if err != nil{
+	 	fmt.Println(err)
+	 	return
+	 }
+	 defer file.Close()
+
+	 //创建Reader对象
+	 //b1 := bufio.NewReader(file)
+	 //1.Read()，高效读取
+	 //p := make([]byte,1024)
+	 //n1,err := b1.Read(p)
+	 //fmt.Println(n1)
+	 //fmt.Println(string(p[:n1]))
+
+	 //2.ReadLine()
+	 //data,flag,err := b1.ReadLine()
+	 //fmt.Println(flag)
+	 //fmt.Println(err)
+	 //fmt.Println(data)
+	 //fmt.Println(string(data))
+
+	 //3.ReadString()
+	// s1,err :=b1.ReadString('\n')
+	// fmt.Println(err)
+	// fmt.Println(s1)
+	//
+	// s1,err = b1.ReadString('\n')
+	// fmt.Println(err)
+	// fmt.Println(s1)
+	//
+	//s1,err = b1.ReadString('\n')
+	//fmt.Println(err)
+	//fmt.Println(s1)
+	//
+	//for{
+	//	s1,err := b1.ReadString('\n')
+	//	if err == io.EOF{
+	//		fmt.Println(&quot;读取完毕。。&quot;)
+	//		break
+	//	}
+	//	fmt.Println(s1)
+	//}
+
+	//4.ReadBytes()
+	//data,err :=b1.ReadBytes('\n')
+	//fmt.Println(err)
+	//fmt.Println(string(data))
+
+
+	//Scanner
+	//s2 := &quot;&quot;
+	//fmt.Scanln(&amp;s2)
+	//fmt.Println(s2)
+
+	b2 := bufio.NewReader(os.Stdin)
+	s2, _ := b2.ReadString('\n')
+	fmt.Println(s2)
+
+}
+
+</code></pre>
+<p>本地文件：english.txt文件内容：</p>
+<p><img src="/img/png/WX20190704-172759.png" alt="WX20190704-172759"></p>
+<p>写数据示例代码：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;os&quot;
+	&quot;fmt&quot;
+	&quot;bufio&quot;
+)
+
+func main() {
+	/*
+	bufio:高效io读写
+		buffer缓存
+		io：input/output
+
+	将io包下的Reader，Write对象进行包装，带缓存的包装，提高读写的效率
+
+		func (b *Writer) Write(p []byte) (nn int, err error)
+		func (b *Writer) WriteByte(c byte) error
+		func (b *Writer) WriteRune(r rune) (size int, err error)
+		func (b *Writer) WriteString(s string) (int, error)
+
+	 */
+
+	 fileName := &quot;/Users/ruby/Documents/pro/a/cc.txt&quot;
+	 file,err := os.OpenFile(fileName,os.O_CREATE|os.O_WRONLY,os.ModePerm)
+	 if err != nil{
+	 	fmt.Println(err)
+	 	return
+	 }
+	 defer file.Close()
+
+	 w1 := bufio.NewWriter(file)
+	 //n,err := w1.WriteString(&quot;helloworld&quot;)
+	 //fmt.Println(err)
+	 //fmt.Println(n)
+	 //w1.Flush() //刷新缓冲区
+
+	 for i:=1;i&lt;=1000;i++{
+	 	w1.WriteString(fmt.Sprintf(&quot;%d:hello&quot;,i))
+	 }
+	 w1.Flush()
+}
+
+</code></pre>
+<h1 id="六ioutil包"><a href="#六ioutil包" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:六ioutil包" class="headings">六、ioutil包</a></h1>
+<p>除了io包可以读写数据，Go语言中还提供了一个辅助的工具包就是ioutil，里面的方法虽然不多，但是都还蛮好用的。</p>
+<pre><code class="language-go">import &quot;io/ioutil&quot;
+</code></pre>
+<p>该包的介绍只有一句话：Package ioutil implements some I/O utility functions。</p>
+<h2 id="1ioutil包的方法"><a href="#1ioutil包的方法" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:1ioutil包的方法" class="headings">1、ioutil包的方法</a></h2>
+<p>下面我们来看一下里面的方法：</p>
+<pre><code class="language-go">// Discard 是一个 io.Writer 接口，调用它的 Write 方法将不做任何事情
+// 并且始终成功返回。
+var Discard io.Writer = devNull(0)
+
+// ReadAll 读取 r 中的所有数据，返回读取的数据和遇到的错误。
+// 如果读取成功，则 err 返回 nil，而不是 EOF，因为 ReadAll 定义为读取
+// 所有数据，所以不会把 EOF 当做错误处理。
+func ReadAll(r io.Reader) ([]byte, error)
+
+// ReadFile 读取文件中的所有数据，返回读取的数据和遇到的错误。
+// 如果读取成功，则 err 返回 nil，而不是 EOF
+func ReadFile(filename string) ([]byte, error)
+
+// WriteFile 向文件中写入数据，写入前会清空文件。
+// 如果文件不存在，则会以指定的权限创建该文件。
+// 返回遇到的错误。
+func WriteFile(filename string, data []byte, perm os.FileMode) error
+
+// ReadDir 读取指定目录中的所有目录和文件（不包括子目录）。
+// 返回读取到的文件信息列表和遇到的错误，列表是经过排序的。
+func ReadDir(dirname string) ([]os.FileInfo, error)
+
+// NopCloser 将 r 包装为一个 ReadCloser 类型，但 Close 方法不做任何事情。
+func NopCloser(r io.Reader) io.ReadCloser
+
+// TempFile 在 dir 目录中创建一个以 prefix 为前缀的临时文件，并将其以读
+// 写模式打开。返回创建的文件对象和遇到的错误。
+// 如果 dir 为空，则在默认的临时目录中创建文件（参见 os.TempDir），多次
+// 调用会创建不同的临时文件，调用者可以通过 f.Name() 获取文件的完整路径。
+// 调用本函数所创建的临时文件，应该由调用者自己删除。
+func TempFile(dir, prefix string) (f *os.File, err error)
+
+// TempDir 功能同 TempFile，只不过创建的是目录，返回目录的完整路径。
+func TempDir(dir, prefix string) (name string, err error)
+</code></pre>
+<h2 id="2示例代码"><a href="#2示例代码" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:2示例代码" class="headings">2、示例代码：</a></h2>
+<pre><code class="language-go">package main
+
+import (
+	&quot;io/ioutil&quot;
+	&quot;fmt&quot;
+	&quot;os&quot;
+)
+
+func main() {
+	/*
+	ioutil包：
+		ReadFile()
+		WriteFile()
+		ReadDir()
+		..
+	 */
+
+	//1.读取文件中的所有的数据
+	//fileName1 := &quot;/Users/ruby/Documents/pro/a/aa.txt&quot;
+	//data, err := ioutil.ReadFile(fileName1)
+	//fmt.Println(err)
+	//fmt.Println(string(data))
+
+	//2.写出数据
+	//fileName2:=&quot;/Users/ruby/Documents/pro/a/bbb.txt&quot;
+	//s1:=&quot;helloworld面朝大海春暖花开&quot;
+	//err:=ioutil.WriteFile(fileName2,[]byte(s1),0777)
+	//fmt.Println(err)
+
+	//3.
+	//s2:=&quot;qwertyuiopsdfghjklzxcvbnm&quot;
+	//r1:=strings.NewReader(s2)
+	//data,_:=ioutil.ReadAll(r1)
+	//fmt.Println(data)
+
+	//4.ReadDir(),读取一个目录下的子内容：子文件和子目录，但是仅有一层
+	//dirName:=&quot;/Users/ruby/Documents/pro/a&quot;
+	//fileInfos,_:=ioutil.ReadDir(dirName)
+	//fmt.Println(len(fileInfos))
+	//for i:=0;i&lt;len(fileInfos);i++{
+	//	//fmt.Printf(&quot;%T\n&quot;,fileInfos[i])
+	//	fmt.Println(i,fileInfos[i].Name(),fileInfos[i].IsDir())
+	//
+	//}
+
+
+	// 5.创建临时目录
+	dir, err := ioutil.TempDir(&quot;/Users/ruby/Documents/pro/a&quot;, &quot;Test&quot;)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer os.Remove(dir) // 用完删除
+	fmt.Printf(&quot;%s\n&quot;, dir)
+
+	// 创建临时文件
+	f, err := ioutil.TempFile(dir, &quot;Test&quot;)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer os.Remove(f.Name()) // 用完删除
+	fmt.Printf(&quot;%s\n&quot;, f.Name())
+
+}
+
+</code></pre>
+<h1 id="七遍历文件夹"><a href="#七遍历文件夹" class="anchor-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon anchor-icon"><path d="M326.612 185.391c59.747 59.809 58.927 155.698.36 214.59-.11.12-.24.25-.36.37l-67.2 67.2c-59.27 59.27-155.699 59.262-214.96 0-59.27-59.26-59.27-155.7 0-214.96l37.106-37.106c9.84-9.84 26.786-3.3 27.294 10.606.648 17.722 3.826 35.527 9.69 52.721 1.986 5.822.567 12.262-3.783 16.612l-13.087 13.087c-28.026 28.026-28.905 73.66-1.155 101.96 28.024 28.579 74.086 28.749 102.325.51l67.2-67.19c28.191-28.191 28.073-73.757 0-101.83-3.701-3.694-7.429-6.564-10.341-8.569a16.037 16.037 0 0 1-6.947-12.606c-.396-10.567 3.348-21.456 11.698-29.806l21.054-21.055c5.521-5.521 14.182-6.199 20.584-1.731a152.482 152.482 0 0 1 20.522 17.197zM467.547 44.449c-59.261-59.262-155.69-59.27-214.96 0l-67.2 67.2c-.12.12-.25.25-.36.37-58.566 58.892-59.387 154.781.36 214.59a152.454 152.454 0 0 0 20.521 17.196c6.402 4.468 15.064 3.789 20.584-1.731l21.054-21.055c8.35-8.35 12.094-19.239 11.698-29.806a16.037 16.037 0 0 0-6.947-12.606c-2.912-2.005-6.64-4.875-10.341-8.569-28.073-28.073-28.191-73.639 0-101.83l67.2-67.19c28.239-28.239 74.3-28.069 102.325.51 27.75 28.3 26.872 73.934-1.155 101.96l-13.087 13.087c-4.35 4.35-5.769 10.79-3.783 16.612 5.864 17.194 9.042 34.999 9.69 52.721.509 13.906 17.454 20.446 27.294 10.606l37.106-37.106c59.271-59.259 59.271-155.699.001-214.959z"/></svg></a><a href="#contents:七遍历文件夹" class="headings">七、遍历文件夹</a></h1>
+<p>学习io之后，尤其是文件操作，我们就可以遍历给定的目录文件夹了。可以使用ioutil包下的readDir()方法，这个方法可以获取指定目录下的内容，返回文件和子目录。</p>
+<p>因为文件夹下还有子文件夹，而ioutil包的ReadDir()只能获取一层目录，所以我们需要自己去设计算法来实现，最容易实现的思路就是使用递归。</p>
+<p>示例代码：</p>
+<pre><code class="language-go">package main
+
+import (
+	&quot;io/ioutil&quot;
+	&quot;fmt&quot;
+	&quot;log&quot;
+)
+
+func main() {
+	/**
+	遍历文件夹：
+	 */
+
+	dirname := &quot;/Users/ruby/Documents/pro&quot;
+	listFiles(dirname, 0)
+
+}
+
+func listFiles(dirname string, level int) {
+	// level用来记录当前递归的层次
+	// 生成有层次感的空格
+	s := &quot;|--&quot;
+	for i := 0; i &lt; level; i++ {
+		s = &quot;|   &quot; + s
+	}
+
+	fileInfos, err := ioutil.ReadDir(dirname)
+	if err != nil{
+		log.Fatal(err)
+	}
+	for _, fi := range fileInfos {
+		filename := dirname + &quot;/&quot; + fi.Name()
+		fmt.Printf(&quot;%s%s\n&quot;, s, filename)
+		if fi.IsDir() {
+			//继续遍历fi这个目录
+			listFiles(filename, level+1)
+		}
+	}
+}
+
+
+</code></pre>
+<p>运行结果：</p>
+<p><img src="/img/png/WX20190720-210316.png" alt="WX20190720-210316"></p>
+<p>千锋Go语言的学习群：784190273</p>
+<p>作者B站：</p>
+<p><a href="https://space.bilibili.com/353694001" target="_blank" rel="noopener">https://space.bilibili.com/353694001</a></p>
+<p>对应视频：
+<a href="https://www.bilibili.com/video/av56945376" target="_blank" rel="noopener">https://www.bilibili.com/video/av56945376</a></p>
+<p>源代码已上传github：</p>
+<p><a href="https://github.com/rubyhan1314/go_advanced" target="_blank" rel="noopener">https://github.com/rubyhan1314/go_advanced</a></p>
+
+            </div>
+
+            
+    
+    
+        <ul class="post-copyright">
+            <li class="copyright-item author"><span class="copyright-item-text">作者</span>：<a href="https://songx.fun/" class="p-author h-card" target="_blank" rel="noopener">songx</a></li>
+            
+                
+                
+                
+                
+                <li class="copyright-item link"><span class="copyright-item-text">链接</span>：<a href="/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/" target="_blank" rel="noopener">http://www.songx.fun/blog/day16-20go语言基础进阶/day16_file操作/</a></li>
+            
+            <li class="copyright-item license"><span class="copyright-item-text">许可</span>：<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></li>
+            
+        </ul>
+    
+
+
+
+        </article>
+
+        
+
+        
+    <div class="updated-badge-container">
+        <span title="Updated @ 2022-08-04 11:48:42 CST" style="cursor:help">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" class="updated-badge"><linearGradient id="b" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="a"><rect width="130" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#a)"><path class="updated-badge-left" d="M0 0h55v20H0z"/><path class="updated-badge-right" d="M55 0h75v20H55z"/><path fill="url(#b)" d="M0 0h130v20H0z"/></g><g fill="#fff" text-anchor="middle" font-size="110"><text x="285" y="150" fill="#010101" fill-opacity=".3" textLength="450" transform="scale(.1)">updated</text><text x="285" y="140" textLength="450" transform="scale(.1)">updated</text><text x="915" y="150" fill="#010101" fill-opacity=".3" textLength="650" transform="scale(.1)">2022-08-04</text><text x="915" y="140" textLength="650" transform="scale(.1)">2022-08-04</text></g></svg>
+        </span></div>
+
+
+
+        
+
+
+        <div class="post-share">
+
+        
+
+        <div class="share-items">
+
+            
+                <div class="share-item twitter">
+                    
+                    <a href="https://twitter.com/share?url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;text=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;hashtags=golang,&amp;via=reuixiy" title="分享到「Twitter」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon twitter-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item facebook">
+                    
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;hashtag=%23golang" title="分享到「Facebook」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon facebook-icon"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item linkedin">
+                    
+                    <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;title=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;summary=%e9%a6%96%e5%85%88%ef%bc%8cfile%e7%b1%bb%e6%98%af%e5%9c%a8os%e5%8c%85%e4%b8%ad%e7%9a%84%ef%bc%8c%e5%b0%81%e8%a3%85%e4%ba%86%e5%ba%95%e5%b1%82%e7%9a%84%e6%96%87%e4%bb%b6%e6%8f%8f%e8%bf%b0%e7%ac%a6%e5%92%8c%e7%9b%b8%e5%85%b3%e4%bf%a1%e6%81%af%ef%bc%8c%e5%90%8c%e6%97%b6%e5%b0%81%e8%a3%85%e4%ba%86Read%e5%92%8cWrite%e7%9a%84%e5%ae%9e%e7%8e%b0%e3%80%82&amp;source=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「LinkedIn」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon linkedin-icon"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item telegram">
+                    
+                    <a href="https://t.me/share/url?url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;text=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c" title="分享到「Telegram」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon telegram-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item weibo">
+                    
+                    <a href="https://service.weibo.com/share/share.php?&amp;url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;title=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;pic=http://www.songx.fun/img/png/fileyunxing1.png&amp;searchPic=false" title="分享到「新浪微博」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon weibo-icon"><path d="M407 177.6c7.6-24-13.4-46.8-37.4-41.7-22 4.8-28.8-28.1-7.1-32.8 50.1-10.9 92.3 37.1 76.5 84.8-6.8 21.2-38.8 10.8-32-10.3zM214.8 446.7C108.5 446.7 0 395.3 0 310.4c0-44.3 28-95.4 76.3-143.7C176 67 279.5 65.8 249.9 161c-4 13.1 12.3 5.7 12.3 6 79.5-33.6 140.5-16.8 114 51.4-3.7 9.4 1.1 10.9 8.3 13.1 135.7 42.3 34.8 215.2-169.7 215.2zm143.7-146.3c-5.4-55.7-78.5-94-163.4-85.7-84.8 8.6-148.8 60.3-143.4 116s78.5 94 163.4 85.7c84.8-8.6 148.8-60.3 143.4-116zM347.9 35.1c-25.9 5.6-16.8 43.7 8.3 38.3 72.3-15.2 134.8 52.8 111.7 124-7.4 24.2 29.1 37 37.4 12 31.9-99.8-55.1-195.9-157.4-174.3zm-78.5 311c-17.1 38.8-66.8 60-109.1 46.3-40.8-13.1-58-53.4-40.3-89.7 17.7-35.4 63.1-55.4 103.4-45.1 42 10.8 63.1 50.2 46 88.5zm-86.3-30c-12.9-5.4-30 .3-38 12.9-8.3 12.9-4.3 28 8.6 34 13.1 6 30.8.3 39.1-12.9 8-13.1 3.7-28.3-9.7-34zm32.6-13.4c-5.1-1.7-11.4.6-14.3 5.4-2.9 5.1-1.4 10.6 3.7 12.9 5.1 2 11.7-.3 14.6-5.4 2.8-5.2 1.1-10.9-4-12.9z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item douban">
+                    
+                    <a href="https://www.douban.com/share/service?href=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;name=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;text=%e9%a6%96%e5%85%88%ef%bc%8cfile%e7%b1%bb%e6%98%af%e5%9c%a8os%e5%8c%85%e4%b8%ad%e7%9a%84%ef%bc%8c%e5%b0%81%e8%a3%85%e4%ba%86%e5%ba%95%e5%b1%82%e7%9a%84%e6%96%87%e4%bb%b6%e6%8f%8f%e8%bf%b0%e7%ac%a6%e5%92%8c%e7%9b%b8%e5%85%b3%e4%bf%a1%e6%81%af%ef%bc%8c%e5%90%8c%e6%97%b6%e5%b0%81%e8%a3%85%e4%ba%86Read%e5%92%8cWrite%e7%9a%84%e5%ae%9e%e7%8e%b0%e3%80%82" title="分享到「豆瓣」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon douban-icon"><path d="M.643.92v2.412h22.714V.92H.643zm1.974 4.926v9.42h18.764v-9.42H2.617zm2.72 2.408H18.69v4.605H5.338V8.254zm1.657 7.412l-2.512.938c1.037 1.461 1.87 2.825 2.512 4.091H0v2.385h24v-2.385h-6.678c.818-1.176 1.589-2.543 2.303-4.091l-2.73-.938a29.952 29.952 0 01-2.479 5.03h-4.75c-.786-1.962-1.677-3.641-2.672-5.03Z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qq">
+                    
+                    <a href="https://connect.qq.com/widget/shareqq/index.html?url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;title=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;summary=%e9%a6%96%e5%85%88%ef%bc%8cfile%e7%b1%bb%e6%98%af%e5%9c%a8os%e5%8c%85%e4%b8%ad%e7%9a%84%ef%bc%8c%e5%b0%81%e8%a3%85%e4%ba%86%e5%ba%95%e5%b1%82%e7%9a%84%e6%96%87%e4%bb%b6%e6%8f%8f%e8%bf%b0%e7%ac%a6%e5%92%8c%e7%9b%b8%e5%85%b3%e4%bf%a1%e6%81%af%ef%bc%8c%e5%90%8c%e6%97%b6%e5%b0%81%e8%a3%85%e4%ba%86Read%e5%92%8cWrite%e7%9a%84%e5%ae%9e%e7%8e%b0%e3%80%82&amp;pics=http://www.songx.fun/img/png/fileyunxing1.png&amp;site=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「QQ」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qq-icon"><path d="M433.754 420.445c-11.526 1.393-44.86-52.741-44.86-52.741 0 31.345-16.136 72.247-51.051 101.786 16.842 5.192 54.843 19.167 45.803 34.421-7.316 12.343-125.51 7.881-159.632 4.037-34.122 3.844-152.316 8.306-159.632-4.037-9.045-15.25 28.918-29.214 45.783-34.415-34.92-29.539-51.059-70.445-51.059-101.792 0 0-33.334 54.134-44.859 52.741-5.37-.65-12.424-29.644 9.347-99.704 10.261-33.024 21.995-60.478 40.144-105.779C60.683 98.063 108.982.006 224 0c113.737.006 163.156 96.133 160.264 214.963 18.118 45.223 29.912 72.85 40.144 105.778 21.768 70.06 14.716 99.053 9.346 99.704z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qzone">
+                    
+                    <a href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=http://www.songx.fun/blog/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6/day16_file%E6%93%8D%E4%BD%9C/&amp;title=File%e6%96%87%e4%bb%b6%e6%93%8d%e4%bd%9c&amp;summary=%e9%a6%96%e5%85%88%ef%bc%8cfile%e7%b1%bb%e6%98%af%e5%9c%a8os%e5%8c%85%e4%b8%ad%e7%9a%84%ef%bc%8c%e5%b0%81%e8%a3%85%e4%ba%86%e5%ba%95%e5%b1%82%e7%9a%84%e6%96%87%e4%bb%b6%e6%8f%8f%e8%bf%b0%e7%ac%a6%e5%92%8c%e7%9b%b8%e5%85%b3%e4%bf%a1%e6%81%af%ef%bc%8c%e5%90%8c%e6%97%b6%e5%b0%81%e8%a3%85%e4%ba%86Read%e5%92%8cWrite%e7%9a%84%e5%ae%9e%e7%8e%b0%e3%80%82&amp;pics=http://www.songx.fun/img/png/fileyunxing1.png&amp;site=%e8%b8%8f%e6%ad%a5%e8%80%8c%e8%a1%8c" title="分享到「QQ 空间」" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon qzone-icon"><path d="M23.985 9.202c-.032-.099-.127-.223-.334-.258-.207-.036-7.351-1.406-7.351-1.406s-.105-.022-.198-.07c-.092-.047-.127-.167-.127-.167S12.447.956 12.349.77C12.25.583 12.104.532 12 .532c-.104 0-.251.051-.349.238-.098.186-3.626 6.531-3.626 6.531s-.035.12-.128.167c-.092.047-.197.07-.197.07S.556 8.908.348 8.943c-.208.036-.302.16-.333.258a.477.477 0 0 0 .125.449l5.362 5.49s.072.08.119.172c.016.104.005.21.005.21s-1.189 7.242-1.22 7.45.075.369.159.43c.083.062.233.106.421.013.189-.093 6.812-3.261 6.812-3.261s.098-.044.201-.061c.103-.017.201.061.201.061s6.623 3.168 6.812 3.261c.188.094.338.049.421-.013a.463.463 0 0 0 .159-.43c-.021-.14-.93-5.677-.93-5.677.876-.54 1.425-1.039 1.849-1.747-2.594.969-6.006 1.717-9.415 1.866-.915.041-2.41.097-3.473-.015-.678-.071-1.17-.144-1.243-.438-.053-.215.054-.46.545-.831a2640.5 2640.5 0 0 1 2.861-2.155c1.285-.968 3.559-2.47 3.559-2.731 0-.285-2.144-.781-4.037-.781-1.945 0-2.275.132-2.811.168-.488.034-.769.005-.804-.138-.06-.248.183-.389.588-.568.709-.314 1.86-.594 1.984-.626.194-.052 3.082-.805 5.618-.535 1.318.14 3.244.668 3.244 1.276 0 .342-1.721 1.494-3.225 2.597-1.149.843-2.217 1.561-2.217 1.688 0 .342 3.533 1.241 6.689 1.01l.003-.022c.048-.092.119-.172.119-.172l5.362-5.49a.477.477 0 0 0 .127-.449z"/></svg></a>
+                </div>
+            
+
+            
+                <div class="share-item qrcode">
+                    <div class="qrcode-container" title="通过「二维码」"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon qrcode-icon"><path d="M0 224h192V32H0v192zM64 96h64v64H64V96zm192-64v192h192V32H256zm128 128h-64V96h64v64zM0 480h192V288H0v192zm64-128h64v64H64v-64zm352-64h32v128h-96v-32h-32v96h-64V288h96v32h64v-32zm0 160h32v32h-32v-32zm-64 0h32v32h-32v-32z"/></svg><div id="qrcode-img"></div>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<script>
+    const typeNumber = 0;
+    const errorCorrectionLevel = 'L';
+    const qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData('http:\/\/www.songx.fun\/blog\/day16-20go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80%E8%BF%9B%E9%98%B6\/day16_file%E6%93%8D%E4%BD%9C\/');
+    qr.make();
+    document.getElementById('qrcode-img').innerHTML = qr.createImgTag();
+</script>
+
+                </div>
+            
+
+        </div>
+
+    </div>
+
+
+
+
+        
+    
+    
+        <div class="related-posts">
+            <h2 class="related-title">相关文章：<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon related-icon"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm144 276c0 6.6-5.4 12-12 12h-92v92c0 6.6-5.4 12-12 12h-56c-6.6 0-12-5.4-12-12v-92h-92c-6.6 0-12-5.4-12-12v-56c0-6.6 5.4-12 12-12h92v-92c0-6.6 5.4-12 12-12h56c6.6 0 12 5.4 12 12v92h92c6.6 0 12 5.4 12 12v56z"/></svg></h2>
+            <ul class="related-list">
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day1/" class="related-link">安装Goland开发工具</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC1%E8%8A%82_%E7%9F%A5%E5%90%8D%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80%E6%88%96%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%8F%91%E5%B1%95%E7%AE%80%E5%8F%B2/" class="related-link">知名编程语言或系统的发展简史</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day07_slice%E7%9A%84%E4%BD%BF%E7%94%A8/" class="related-link">切片(Slice)</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day01_%E7%AC%AC11%E8%8A%82-_%E7%BC%96%E7%A0%81%E8%A7%84%E8%8C%83/" class="related-link">编码规范</a>
+                    </li>
+                
+                    <li class="related-item">
+                        <a href="/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day03_%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BF%90%E7%AE%97%E7%AC%A6/" class="related-link">基本语法——数据类型</a>
+                    </li>
+                
+            </ul>
+        </div>
+    
+
+
+
+        
+    
+        <div class="post-tags">
+            
+                
+                
+                
+                
+                    
+                    <a href="/tags/golang/" rel="tag" class="post-tags-link"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon tag-icon"><path d="M0 252.118V48C0 21.49 21.49 0 48 0h204.118a48 48 0 0 1 33.941 14.059l211.882 211.882c18.745 18.745 18.745 49.137 0 67.882L293.823 497.941c-18.745 18.745-49.137 18.745-67.882 0L14.059 286.059A48 48 0 0 1 0 252.118zM112 64c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48z"/></svg>golang</a>
+                
+            
+        </div>
+    
+
+
+
+        
+
+
+        
+
+
+        
+    
+        
+        
+    
+    
+    
+    
+        <ul class="post-nav">
+            
+                <li class="post-nav-prev">
+                    <a href="/blog/day23-24mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%9F%BA%E7%A1%80/day24%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" rel="prev">&lt; day15 课堂资料</a>
+                </li>
+            
+            
+                <li class="post-nav-next">
+                    <a href="/blog/day83-85go-micro%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%A1%86%E6%9E%B6/day83_go-micro%E6%A1%86%E6%9E%B6%E4%BB%8B%E7%BB%8D/" rel="next">go-micro介绍及环境搭建 &gt;</a>
+                </li>
+            
+        </ul>
+    
+
+
+
+        
+
+
+    </div>
+</main>
+
+
+            
+    <div id="back-to-top" class="back-to-top">
+        <a href="#"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="icon arrow-up"><path d="M34.9 289.5l-22.2-22.2c-9.4-9.4-9.4-24.6 0-33.9L207 39c9.4-9.4 24.6-9.4 33.9 0l194.3 194.3c9.4 9.4 9.4 24.6 0 33.9L413 289.4c-9.5 9.5-25 9.3-34.3-.4L264 168.6V456c0 13.3-10.7 24-24 24h-32c-13.3 0-24-10.7-24-24V168.6L69.2 289.1c-9.3 9.8-24.8 10-34.3.4z"/></svg></a>
+    </div>
+
+
+            
+    <footer id="footer" class="footer">
+        <div class="footer-inner">
+            <div class="site-info">©&nbsp;1969–2022&nbsp;<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon footer-icon"><path d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"/></svg>&nbsp;songx</div><div class="powered-by">Powered by <a href="https://github.com/gohugoio/hugo" target="_blank" rel="noopener">Hugo</a> | Theme is <a href="https://github.com/reuixiy/hugo-theme-meme" target="_blank" rel="noopener">MemE</a></div><div class="site-copyright"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></div>
+
+            
+    
+        <ul class="socials"><li class="socials-item">
+                    <a href="/rss.xml" target="_blank" rel="external noopener" title="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="mailto:reuixiy@gmail.com" target="_blank" rel="external noopener" title="Email"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M464 64H48C21.49 64 0 85.49 0 112v288c0 26.51 21.49 48 48 48h416c26.51 0 48-21.49 48-48V112c0-26.51-21.49-48-48-48zm0 48v40.805c-22.422 18.259-58.168 46.651-134.587 106.49-16.841 13.247-50.201 45.072-73.413 44.701-23.208.375-56.579-31.459-73.413-44.701C106.18 199.465 70.425 171.067 48 152.805V112h416zM48 400V214.398c22.914 18.251 55.409 43.862 104.938 82.646 21.857 17.205 60.134 55.186 103.062 54.955 42.717.231 80.509-37.199 103.053-54.947 49.528-38.783 82.032-64.401 104.947-82.653V400H48z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://github.com/reuixiy" target="_blank" rel="external noopener" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon social-icon"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://twitter.com/reuixiy" target="_blank" rel="external noopener" title="Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="icon social-icon"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg></a>
+                </li><li class="socials-item">
+                    <a href="https://t.me/yixiuer" target="_blank" rel="external noopener" title="Telegram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="icon social-icon"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.1 16.9-22.4 10.5l-62-45.7-29.9 28.8c-3.3 3.3-6.1 6.1-12.5 6.1l4.4-63.1 114.9-103.8c5-4.4-1.1-6.9-7.7-2.5l-142 89.4-61.2-19.1c-13.3-4.2-13.6-13.3 2.8-19.7l239.1-92.2c11.1-4 20.8 2.7 17.2 19.5z"/></svg></a>
+                </li></ul>
+    
+
+
+
+            
+        </div>
+    </footer>
+
+
+        </div>
+        
+
+        
+
+
+
+
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@latest/dist/medium-zoom.min.js"></script>
+
+<script>
+    let imgNodes = document.querySelectorAll('div.post-body img');
+    imgNodes = Array.from(imgNodes).filter(node => node.parentNode.tagName !== "A");
+
+    mediumZoom(imgNodes, {
+        background: 'hsla(var(--color-bg-h), var(--color-bg-s), var(--color-bg-l), 0.95)'
+    })
+</script>
+
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.min.js" type="module" defer></script>
+
+
+
+
+
+
+    </body>
+</html>
