@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
     <title type="text">踏步而行</title>
     <subtitle type="html">MemE 是一个强大且可高度定制的 GoHugo 博客主题，专为个人博客设计。</subtitle>
-    <updated>2022-08-19T18:15:43&#43;08:00</updated>
+    <updated>2022-08-22T13:09:13&#43;08:00</updated>
     <id>http://www.songx.fun/</id>
     <link rel="alternate" type="text/html" href="http://www.songx.fun/" />
     <link rel="self" type="application/atom&#43;xml" href="http://www.songx.fun/atom.xml" />
@@ -9055,7 +9055,7 @@ type Context interface {
             <title type="text">安装Goland开发工具</title>
             <link rel="alternate" type="text/html" href="http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day1/" />
             <id>http://www.songx.fun/blog/day01-15go%E8%AF%AD%E8%A8%80%E5%9F%BA%E7%A1%80/day1/</id>
-            <updated>2022-08-04T10:54:07&#43;08:00</updated>
+            <updated>2022-08-19T18:37:59&#43;08:00</updated>
             <published>2022-08-01T21:29:20&#43;02:00</published>
             <author>
                     <name>songx</name>
@@ -9080,7 +9080,7 @@ type Context interface {
 &lt;p&gt;对于Mac和Windows，都有直接的安装文件，直接双击后，傻瓜式安装，一路next，直到完成。&lt;/p&gt;
 &lt;p&gt;打开Goland工具，goland的激活码：http://idea.iblue.me&lt;/p&gt;
 &lt;p&gt;新建Go项目：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;.//img/png/land1.png&#34; alt=&#34;land1&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://www.songx.fun/img/png/land1.png&#34; alt=&#34;land1&#34;&gt;&lt;/p&gt;
 &lt;p&gt;创建项目：&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://www.songx.fun/img/png/chuangjianxiangmu.png&#34; alt=&#34;chuangjianxiangmu&#34;&gt;&lt;/p&gt;
 &lt;p&gt;Goland配置goroot：&lt;/p&gt;

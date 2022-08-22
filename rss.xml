@@ -23,7 +23,7 @@
         
             <copyright>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</copyright>
         
-        <lastBuildDate>Fri, 19 Aug 2022 18:15:43 &#43;0800</lastBuildDate>
+        <lastBuildDate>Mon, 22 Aug 2022 13:09:13 &#43;0800</lastBuildDate>
         
             <atom:link rel="self" type="application/rss&#43;xml" href="http://www.songx.fun/rss.xml" />
         
@@ -9017,7 +9017,7 @@ type Context interface {
 &lt;p&gt;对于Mac和Windows，都有直接的安装文件，直接双击后，傻瓜式安装，一路next，直到完成。&lt;/p&gt;
 &lt;p&gt;打开Goland工具，goland的激活码：http://idea.iblue.me&lt;/p&gt;
 &lt;p&gt;新建Go项目：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;.//img/png/land1.png&#34; alt=&#34;land1&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://www.songx.fun/img/png/land1.png&#34; alt=&#34;land1&#34;&gt;&lt;/p&gt;
 &lt;p&gt;创建项目：&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://www.songx.fun/img/png/chuangjianxiangmu.png&#34; alt=&#34;chuangjianxiangmu&#34;&gt;&lt;/p&gt;
 &lt;p&gt;Goland配置goroot：&lt;/p&gt;
